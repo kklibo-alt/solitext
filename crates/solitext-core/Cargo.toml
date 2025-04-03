@@ -1,0 +1,10 @@
+[package]
+name = "solitext-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+rand.workspace = true
+strum.workspace = true
+termion.workspace = true
+test-case.workspace = true 

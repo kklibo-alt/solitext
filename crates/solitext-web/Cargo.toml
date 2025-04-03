@@ -1,0 +1,11 @@
+[package]
+name = "solitext-web"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "web"
+path = "src/main.rs"
+
+[dependencies]
+solitext-core.workspace = true 
