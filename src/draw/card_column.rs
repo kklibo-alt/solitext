@@ -82,10 +82,10 @@ impl Draw {
     }
 
     /// A scrolled card column's visible cards, or None if not scrolled
-    fn scrolled_column(cards: &Vec<(Card, CardState)>, selected: usize) -> Option<ScrolledColumn> {
+    fn scrolled_column(cards: &[(Card, CardState)], selected: usize) -> Option<ScrolledColumn> {
         Self::scrolled_column_offset(cards.len(), selected).map(|(offset, at_edge)| {
             ScrolledColumn {
-                visible_cards: cards[offset..offset + Self::COLUMN_MAX_VISIBLE_CARDS].into(),
+                visible_cards: cards[offset..offset + Self::COLUMN_MAX_VISIBLE_CARDS].to_vec(),
                 at_edge,
             }
         })

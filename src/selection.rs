@@ -136,7 +136,7 @@ impl Selection {
     pub fn selected_collection<'a>(
         &'a self,
         game_state: &'a mut GameState,
-    ) -> &mut dyn CardCollection {
+    ) -> &'a mut dyn CardCollection {
         match self {
             Self::Deck => &mut game_state.deck_drawn,
             Self::Column { index, .. } => game_state

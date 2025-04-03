@@ -326,39 +326,47 @@ mod tests {
             index: 1,
             card_count: 1
         }));
-        assert!(!Selection::Column {
-            index: 1,
-            card_count: 1
-        }
-        .same_collection(Selection::Pile { index: 1 }));
+        assert!(
+            !Selection::Column {
+                index: 1,
+                card_count: 1
+            }
+            .same_collection(Selection::Pile { index: 1 })
+        );
         assert!(!Selection::Pile { index: 1 }.same_collection(Selection::Deck));
 
         assert!(Selection::Deck.same_collection(Selection::Deck));
 
-        assert!(Selection::Column {
-            index: 1,
-            card_count: 1
-        }
-        .same_collection(Selection::Column {
-            index: 1,
-            card_count: 1
-        }));
-        assert!(Selection::Column {
-            index: 1,
-            card_count: 2
-        }
-        .same_collection(Selection::Column {
-            index: 1,
-            card_count: 1
-        }));
-        assert!(!Selection::Column {
-            index: 2,
-            card_count: 1
-        }
-        .same_collection(Selection::Column {
-            index: 1,
-            card_count: 1
-        }));
+        assert!(
+            Selection::Column {
+                index: 1,
+                card_count: 1
+            }
+            .same_collection(Selection::Column {
+                index: 1,
+                card_count: 1
+            })
+        );
+        assert!(
+            Selection::Column {
+                index: 1,
+                card_count: 2
+            }
+            .same_collection(Selection::Column {
+                index: 1,
+                card_count: 1
+            })
+        );
+        assert!(
+            !Selection::Column {
+                index: 2,
+                card_count: 1
+            }
+            .same_collection(Selection::Column {
+                index: 1,
+                card_count: 1
+            })
+        );
 
         assert!(Selection::Pile { index: 1 }.same_collection(Selection::Pile { index: 1 }));
         assert!(!Selection::Pile { index: 2 }.same_collection(Selection::Pile { index: 1 }));
