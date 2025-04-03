@@ -30,6 +30,7 @@ pub struct GameState {
     pub card_piles: [CardPile; Self::CARD_PILES_COUNT],
 }
 
+#[allow(clippy::result_unit_err)]
 pub trait CardCollection {
     fn take(&mut self, cards_count: usize) -> Result<Vec<Card>, ()>;
     fn receive(&mut self, cards: Vec<Card>) -> Result<(), ()>;

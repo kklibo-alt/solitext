@@ -23,6 +23,12 @@ enum UiState {
     Quit,
 }
 
+impl Default for Ui {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Ui {
     pub fn new() -> Self {
         Self {

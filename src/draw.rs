@@ -19,6 +19,12 @@ pub struct Draw {
     pub debug_mode: bool,
 }
 
+impl Default for Draw {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Draw {
     pub fn new() -> Self {
         Self {

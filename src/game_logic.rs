@@ -143,6 +143,7 @@ fn valid_move_pile_to_column(
     valid_move_card_to_column(card, column_index, game_state)
 }
 
+#[allow(clippy::result_unit_err)]
 pub fn valid_move(from: Selection, to: Selection, game_state: &mut GameState) -> Result<(), ()> {
     use Selection::{Column, Deck, Pile};
     match from {
