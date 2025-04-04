@@ -3,7 +3,7 @@
 use super::Draw;
 use crate::cards::Card;
 use crate::game_state::CardState;
-use termion::color::*;
+use crate::terminal::{termion_impl::TermionColor, TerminalColor};
 
 impl Draw {
     pub(crate) fn display_card(
@@ -16,22 +16,32 @@ impl Draw {
         let text = match card_state {
             CardState::FaceUp => {
                 if card.suit.is_red() {
-                    self.set_colors(Red, White);
+                    let red = TermionColor::red();
+                    let white = TermionColor::white();
+                    self.set_colors(red, white);
                 } else {
-                    self.set_colors(Black, White);
+                    let black = TermionColor::black();
+                    let white = TermionColor::white();
+                    self.set_colors(black, white);
                 }
                 card.to_string()
             }
             CardState::FaceDown => {
                 if self.debug_mode {
                     if card.suit.is_red() {
-                        self.set_colors(LightRed, Black);
+                        let light_red = TermionColor::light_red();
+                        let black = TermionColor::black();
+                        self.set_colors(light_red, black);
                     } else {
-                        self.set_colors(LightBlack, Black);
+                        let light_black = TermionColor::light_black();
+                        let black = TermionColor::black();
+                        self.set_colors(light_black, black);
                     }
                     card.to_string()
                 } else {
-                    self.set_colors(LightGreen, LightBlack);
+                    let light_green = TermionColor::light_green();
+                    let light_black = TermionColor::light_black();
+                    self.set_colors(light_green, light_black);
                     "st".to_string()
                 }
             }

@@ -7,11 +7,11 @@ mod game_state;
 mod info;
 
 use crate::selection::Selection;
-use std::io::{Stdout, stdout};
-use termion::raw::{IntoRawMode, RawTerminal};
+use crate::terminal::{Terminal, termion_impl::TermionTerminal};
+use std::io::Write;
 
 pub struct Draw {
-    stdout: RawTerminal<Stdout>,
+    pub terminal: Box<dyn Terminal>,
     pub cursor: Selection,
     pub selected: Option<Selection>,
     pub context_help_message: String,
@@ -28,7 +28,7 @@ impl Default for Draw {
 impl Draw {
     pub fn new() -> Self {
         Self {
-            stdout: stdout().into_raw_mode().unwrap(),
+            terminal: Box::new(TermionTerminal::new()),
             cursor: Selection::Deck,
             selected: None,
             context_help_message: "".to_string(),

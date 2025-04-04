@@ -3,30 +3,33 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::selection::Selection;
-use termion::color;
+use crate::terminal::{TerminalColor, termion_impl::TermionColor};
 
 impl Draw {
     pub fn display_game_state(&mut self, game_state: &GameState) {
         self.clear_screen();
-        self.set_colors(Self::default_fg(), Self::default_bg());
+        self.set_colors(self.default_fg(), self.default_bg());
 
         self.display_info();
         self.display_deck(game_state);
         self.display_columns(game_state);
         self.display_piles(game_state);
 
-        self.set_colors(color::Blue, Self::default_bg());
+        let blue = TermionColor::light_blue();
+        self.set_colors(blue, self.default_bg());
         self.display_collection_selection_cursor();
 
-        self.set_colors(Self::default_fg(), color::LightGreen);
+        let green_bg = TermionColor::light_green();
+        self.set_colors(self.default_fg(), green_bg);
         self.display_card_selection_cursor(self.cursor, game_state);
 
-        self.set_colors(Self::default_fg(), color::LightYellow);
+        let yellow_bg = TermionColor::white();
+        self.set_colors(self.default_fg(), yellow_bg);
         if let Some(selected) = self.selected {
             self.display_card_selection_cursor(selected, game_state);
         }
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
+        self.set_colors(self.default_fg(), self.default_bg());
     }
 
     fn selection_col(selection: Selection) -> usize {

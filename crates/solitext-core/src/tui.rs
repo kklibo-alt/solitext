@@ -3,9 +3,7 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use std::io::stdin;
-use termion::event::Key;
-use termion::input::TermRead;
+use crate::terminal::Key;
 
 pub struct Ui {
     /// The deck used to seed the current game (if any)
@@ -167,9 +165,8 @@ impl Ui {
             return;
         }
 
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        while let Some(key) = self.draw.terminal.read_single_key() {
+            match key {
                 Key::Left => self.draw.cursor.move_left(),
                 Key::Right => self.draw.cursor.move_right(),
                 Key::Up => self.draw.cursor.select_up(),
@@ -187,12 +184,12 @@ impl Ui {
                 Key::Char('h') => self.run_help(game_state),
                 Key::Esc => {
                     if self.run_game_menu(game_state) {
-                        break;
+                        return;
                     }
                 }
-                Key::Ctrl('c') => {
+                Key::CtrlC => {
                     self.ui_state = UiState::Quit;
-                    break;
+                    return;
                 }
                 _ => {}
             }
@@ -204,9 +201,9 @@ impl Ui {
 
     fn run_start_screen(&mut self) {
         self.draw.display_start_screen();
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        
+        while let Some(key) = self.draw.terminal.read_single_key() {
+            match key {
                 Key::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     break;
@@ -215,7 +212,7 @@ impl Ui {
                     self.ui_state = UiState::NewGame(GameMode::DrawThree);
                     break;
                 }
-                Key::Esc | Key::Ctrl('c') => {
+                Key::Esc | Key::CtrlC => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -227,9 +224,9 @@ impl Ui {
     /// Returns: true IFF UiState has changed
     fn run_game_menu(&mut self, game_state: &mut GameState) -> bool {
         self.draw.display_game_menu(game_state);
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        
+        while let Some(key) = self.draw.terminal.read_single_key() {
+            match key {
                 Key::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     return true;
@@ -242,7 +239,7 @@ impl Ui {
                     self.ui_state = UiState::RestartGame;
                     return true;
                 }
-                Key::Char('q') | Key::Ctrl('c') => {
+                Key::Char('q') | Key::CtrlC => {
                     self.ui_state = UiState::Quit;
                     return true;
                 }
@@ -255,17 +252,35 @@ impl Ui {
         false
     }
 
-    fn run_victory(&mut self, game_state: &mut GameState) {
-        self.draw.display_victory(game_state);
-
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('y') => {
-                    self.ui_state = UiState::NewGame(game_state.game_mode);
+    fn run_help(&mut self, game_state: &mut GameState) {
+        self.draw.display_help(game_state);
+        
+        while let Some(key) = self.draw.terminal.read_single_key() {
+            match key {
+                Key::Esc | Key::Char('h') | Key::Char('q') | Key::CtrlC => {
                     break;
                 }
-                Key::Char('n') | Key::Esc | Key::Ctrl('c') => {
+                _ => {}
+            }
+        }
+        
+        self.draw.display_game_state(game_state);
+    }
+
+    fn run_victory(&mut self, game_state: &mut GameState) {
+        self.draw.display_victory(game_state);
+        
+        while let Some(key) = self.draw.terminal.read_single_key() {
+            match key {
+                Key::Char('1') => {
+                    self.ui_state = UiState::NewGame(GameMode::DrawOne);
+                    break;
+                }
+                Key::Char('3') => {
+                    self.ui_state = UiState::NewGame(GameMode::DrawThree);
+                    break;
+                }
+                Key::Esc | Key::Char('q') | Key::CtrlC => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -274,50 +289,36 @@ impl Ui {
         }
     }
 
-    pub fn run_new_game(&mut self, game_state: &mut GameState, game_mode: GameMode) {
-        let game_deck = Card::shuffled_deck();
-        self.game_deck = Some(game_deck.clone());
-        *game_state = GameState::init(game_deck);
-        game_state.game_mode = game_mode;
-        self.reset_for_new_game();
-        self.ui_state = UiState::Game;
-    }
-
-    pub fn run_restart_game(&mut self, game_state: &mut GameState) {
-        let game_mode = game_state.game_mode;
-        *game_state = GameState::init(
-            self.game_deck
-                .clone()
-                .expect("deck for current game should exist"),
-        );
-        game_state.game_mode = game_mode;
-        self.reset_for_new_game();
-        self.ui_state = UiState::Game;
-    }
-
-    pub fn run_help(&mut self, game_state: &mut GameState) {
-        self.draw.display_help(game_state);
-        stdin().keys().next();
-    }
-
-    pub fn run(&mut self, game_state: &mut GameState) {
+    /// Run the main UI loop
+    pub fn run(&mut self) {
         self.draw.set_up_terminal();
+
+        let deck = Card::shuffled_deck();
+        let mut game_state = GameState::init(deck);
 
         loop {
             match self.ui_state {
                 UiState::StartScreen => self.run_start_screen(),
-                UiState::NewGame(game_mode) => self.run_new_game(game_state, game_mode),
-                UiState::RestartGame => self.run_restart_game(game_state),
-                UiState::Game => self.run_game(game_state),
-                UiState::Victory => self.run_victory(game_state),
+                UiState::NewGame(mode) => {
+                    self.reset_for_new_game();
+                    let deck = Card::shuffled_deck();
+                    game_state = GameState::init(deck);
+                    game_state.game_mode = mode;
+                    self.ui_state = UiState::Game;
+                }
+                UiState::RestartGame => {
+                    self.reset_for_new_game();
+                    let deck = Card::shuffled_deck();
+                    game_state = GameState::init(deck);
+                    self.ui_state = UiState::Game;
+                }
+                UiState::Game => self.run_game(&mut game_state),
+                UiState::Victory => self.run_victory(&mut game_state),
                 UiState::Quit => break,
             }
         }
 
         self.draw.restore_terminal();
-        self.draw
-            .draw_text(1, 1, "please send bug reports via IRC or ham radio");
-        self.draw.draw_text(1, 1, "");
     }
 }
 
