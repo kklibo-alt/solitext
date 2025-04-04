@@ -5,20 +5,81 @@ use solitext_core::terminal::{
     TerminalInput, White, Yellow
 };
 
-// This is a stub implementation that would be replaced with ratzilla in a real implementation
+// This is a stub implementation that would be replaced with real web implementation
 
-// Mock RawTerminal type for web
-pub struct WebRawTerminal<W: Write> {
-    inner: W,
+// Web-specific stdout implementation
+pub struct WebStdout {
+    // In a real implementation, this might contain a reference to a web canvas or DOM element
+    buffer: Vec<u8>,
 }
 
-impl<W: Write> Write for WebRawTerminal<W> {
+impl WebStdout {
+    pub fn new() -> Self {
+        Self { buffer: Vec::new() }
+    }
+}
+
+impl Default for WebStdout {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl Write for WebStdout {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        // In a real implementation, this would render to the web UI
+        self.buffer.extend_from_slice(buf);
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        // In a real implementation, this might update the display
+        Ok(())
+    }
+}
+
+// Mock RawTerminal type for web
+pub struct WebRawTerminal {
+    inner: WebStdout,
+}
+
+impl Write for WebRawTerminal {
     fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
         self.inner.write(buf)
     }
 
     fn flush(&mut self) -> std::io::Result<()> {
         self.inner.flush()
+    }
+}
+
+// Implement Terminal for WebStdout
+impl Terminal for WebStdout {
+    type RawTerminal = WebRawTerminal;
+    
+    fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal> {
+        // In a real implementation, this would set up the web UI for raw terminal mode
+        Ok(WebRawTerminal { inner: self })
+    }
+    
+    fn goto(x: u16, y: u16) -> String {
+        // ANSI escape sequence for cursor positioning
+        format!("\x1b[{};{}H", y, x)
+    }
+    
+    fn hide() -> String {
+        // ANSI escape sequence to hide cursor
+        String::from("\x1b[?25l")
+    }
+    
+    fn show() -> String {
+        // ANSI escape sequence to show cursor
+        String::from("\x1b[?25h")
+    }
+    
+    fn clear_all() -> String {
+        // ANSI escape sequence to clear screen
+        String::from("\x1b[2J")
     }
 }
 
@@ -176,31 +237,6 @@ impl Color for Reset {
     }
 }
 
-// Implement Terminal for Stdout
-impl Terminal for Stdout {
-    type RawTerminal = WebRawTerminal<Stdout>;
-    
-    fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal> {
-        Ok(WebRawTerminal { inner: self })
-    }
-    
-    fn goto(x: u16, y: u16) -> String {
-        format!("\x1b[{};{}H", y, x)
-    }
-    
-    fn hide() -> String {
-        String::from("\x1b[?25l")
-    }
-    
-    fn show() -> String {
-        String::from("\x1b[?25h")
-    }
-    
-    fn clear_all() -> String {
-        String::from("\x1b[2J")
-    }
-}
-
 // Web-based input handling (stub)
 pub struct WebInput {
     keys: Vec<Key>,
@@ -223,6 +259,12 @@ impl WebInput {
             keys,
             current_index: 0,
         }
+    }
+}
+
+impl Default for WebInput {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

@@ -3,14 +3,22 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use crate::terminal::{Key, Terminal, TerminalInput};
-use std::io::stdin;
+use crate::terminal::{Key, Terminal, TerminalInput, Black, Blue, LightGreen, LightWhite, LightYellow, Reset};
+use std::io::Write;
+use std::marker::PhantomData;
 
-pub struct Ui<T: Terminal> {
+// UI struct that is generic over both the terminal implementation and input source
+pub struct Ui<T, I>
+where 
+    T: Terminal + Write + Default,
+    T::RawTerminal: Write,
+    I: TerminalInput + Default,
+{
     /// The deck used to seed the current game (if any)
     game_deck: Option<Vec<Card>>,
     ui_state: UiState,
     draw: Draw<T>,
+    _input_type: PhantomData<I>, // Used only for type parameters
 }
 
 enum UiState {
@@ -22,20 +30,32 @@ enum UiState {
     Quit,
 }
 
-impl<T: Terminal + Default> Default for Ui<T> {
+impl<T, I> Default for Ui<T, I>
+where 
+    T: Terminal + Write + Default,
+    T::RawTerminal: Write,
+    I: TerminalInput + Default,
+{
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<T: Terminal + Default> Ui<T> {
+impl<T, I> Ui<T, I>
+where 
+    T: Terminal + Write + Default,
+    T::RawTerminal: Write,
+    I: TerminalInput + Default,
+{
     pub fn new() -> Self {
         Self {
             game_deck: None,
             ui_state: UiState::StartScreen,
             draw: Draw::new(T::default()),
+            _input_type: PhantomData,
         }
     }
+    
     pub fn reset_for_new_game(&mut self) {
         self.draw.cursor = Selection::Deck;
         self.draw.selected = None;
@@ -142,14 +162,12 @@ impl<T: Terminal + Default> Ui<T> {
     fn turn_actions(&mut self, game_state: &mut GameState) -> bool {
         // Ensure a face-up card at the end of each column
         game_logic::face_up_on_columns(game_state);
-        // Hit if the deck has cards and the drawn deck is empty
-        // game_state.auto_hit(); [disabled; should remove permanently?]
+        
         // Fix column selections, if needed
         self.apply_column_selection_rules(game_state);
+        
         // Update context help line
         self.set_context_help_message();
-
-        // (Any other automatic state changes can go here too)
 
         if game_logic::victory(game_state) {
             self.draw.debug_message = "Victory".to_string();
@@ -157,16 +175,27 @@ impl<T: Terminal + Default> Ui<T> {
             return true;
         }
 
-        self.draw.display_game_state(game_state);
+        // Display game state with appropriate colors
+        self.draw.display_game_state(
+            game_state,
+            LightWhite,  // foreground 
+            Black,       // background
+            Blue,        // accent background
+            LightGreen,  // cursor accent 1
+            LightYellow, // cursor accent 2
+        );
+        
         false
     }
 
-    fn run_game<I: TerminalInput>(&mut self, game_state: &mut GameState, input: I) {
+    fn run_game(&mut self, game_state: &mut GameState) {
         if self.turn_actions(game_state) {
             return;
         }
 
+        let input = I::default();
         let mut keys = input.keys();
+        
         while let Some(result) = I::read_key(&mut keys) {
             let key = result.unwrap();
             match key {
@@ -203,10 +232,21 @@ impl<T: Terminal + Default> Ui<T> {
     }
 
     fn run_start_screen(&mut self) {
-        self.draw.display_start_screen();
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        // Set up the terminal and display the start screen
+        self.draw.set_up_terminal(LightWhite, Black);
+        self.draw.display_start_screen(
+            LightWhite, 
+            Black, 
+            Blue
+        );
+
+        // Get input from the user
+        let input = I::default();
+        let mut keys = input.keys();
+        
+        while let Some(result) = I::read_key(&mut keys) {
+            let key = result.unwrap();
+            match key {
                 Key::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     break;
@@ -224,12 +264,22 @@ impl<T: Terminal + Default> Ui<T> {
         }
     }
 
-    /// Returns: true IFF UiState has changed
     fn run_game_menu(&mut self, game_state: &mut GameState) -> bool {
-        self.draw.display_game_menu(game_state);
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        // Display the game menu
+        self.draw.display_game_menu(
+            game_state, 
+            LightWhite, 
+            Black, 
+            Blue
+        );
+        
+        // Get input from the user
+        let input = I::default();
+        let mut keys = input.keys();
+        
+        while let Some(result) = I::read_key(&mut keys) {
+            let key = result.unwrap();
+            match key {
                 Key::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     return true;
@@ -256,11 +306,21 @@ impl<T: Terminal + Default> Ui<T> {
     }
 
     fn run_victory(&mut self, game_state: &mut GameState) {
-        self.draw.display_victory(game_state);
+        // Display the victory screen
+        self.draw.display_victory(
+            game_state, 
+            LightWhite, 
+            Black, 
+            Blue
+        );
 
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        // Get input from the user
+        let input = I::default();
+        let mut keys = input.keys();
+        
+        while let Some(result) = I::read_key(&mut keys) {
+            let key = result.unwrap();
+            match key {
                 Key::Char('y') => {
                     self.ui_state = UiState::NewGame(game_state.game_mode);
                     break;
@@ -296,28 +356,41 @@ impl<T: Terminal + Default> Ui<T> {
     }
 
     pub fn run_help(&mut self, game_state: &mut GameState) {
-        self.draw.display_help(game_state);
-        stdin().keys().next();
+        // Display the help screen
+        self.draw.display_help(
+            game_state, 
+            LightWhite, 
+            Black, 
+            Blue
+        );
+        
+        // Wait for any key press
+        let input = I::default();
+        let mut keys = input.keys();
+        I::read_key(&mut keys); // Just wait for one key press
     }
 
     pub fn run(&mut self, game_state: &mut GameState) {
-        self.draw.set_up_terminal();
+        // Set up the terminal
+        self.draw.set_up_terminal(LightWhite, Black);
 
         loop {
             match self.ui_state {
                 UiState::StartScreen => self.run_start_screen(),
                 UiState::NewGame(game_mode) => self.run_new_game(game_state, game_mode),
                 UiState::RestartGame => self.run_restart_game(game_state),
-                UiState::Game => self.run_game(game_state, T::default()),
+                UiState::Game => self.run_game(game_state),
                 UiState::Victory => self.run_victory(game_state),
                 UiState::Quit => break,
             }
         }
 
-        self.draw.restore_terminal();
-        self.draw
-            .draw_text(1, 1, "please send bug reports via IRC or ham radio");
-        self.draw.draw_text(1, 1, "");
+        // Restore the terminal
+        self.draw.restore_terminal(Reset);
+        
+        // Final message
+        self.draw.draw_text(1, 1, "please send bug reports via IRC or ham radio");
+        self.draw.draw_text(1, 2, "");
     }
 }
 
@@ -325,6 +398,7 @@ impl<T: Terminal + Default> Ui<T> {
 mod tests {
     use super::*;
     use crate::cards::Card;
+    use crate::terminal_mock::{MockStdout, MockInput};
 
     #[test]
     fn test_same_collection() {
@@ -382,5 +456,15 @@ mod tests {
     fn test_selected_collection() {
         let mut a = GameState::init(Card::ordered_deck());
         let _b = Selection::Deck.selected_collection(&mut a);
+    }
+    
+    #[test]
+    fn test_ui_with_mock() {
+        // Create a UI with mock implementations
+        let mut ui = Ui::<MockStdout, MockInput>::new();
+        let mut game_state = GameState::init(Card::ordered_deck());
+        
+        // Just make sure we can create one without errors
+        assert!(ui.game_deck.is_none());
     }
 }
