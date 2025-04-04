@@ -3,7 +3,7 @@
 use super::Draw;
 use crate::cards::Suit;
 use crate::game_state::{CardState, GameState};
-use crate::terminal::Terminal;
+use crate::terminal::{Terminal, Blue, LightBlack};
 use std::io::Write;
 
 impl<T> Draw<T> 
@@ -21,7 +21,6 @@ where
     const PILES_INIT_ROW: usize = 2;
     const PILES_ROW_STEP: usize = 2;
     pub(super) fn display_piles(&mut self, game_state: &GameState) {
-        use crate::terminal::color::*;
         let (init_col, init_row) = (Self::PILES_INIT_COL, Self::PILES_INIT_ROW);
         let mut row = init_row;
         for (index, pile) in game_state.card_piles.iter().enumerate() {

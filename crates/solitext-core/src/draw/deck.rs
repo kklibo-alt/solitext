@@ -2,7 +2,7 @@
 
 use super::Draw;
 use crate::game_state::{CardState, GameMode, GameState};
-use crate::terminal::Terminal;
+use crate::terminal::{Terminal, LightBlack, Green};
 use std::io::Write;
 
 impl<T> Draw<T> 
@@ -28,7 +28,6 @@ where
     const DECK_ROW_STEP: usize = 1;
     const DECK_DRAWN_MAX_DISPLAY_CARDS: usize = 3;
     pub(super) fn display_deck(&mut self, game_state: &GameState) {
-        use crate::terminal::color::*;
         let (col, mut row) = (Self::DECK_INIT_COL, Self::DECK_INIT_ROW);
         if let Some(card) = game_state.deck.last() {
             self.display_card(*card, CardState::FaceDown, col, row);

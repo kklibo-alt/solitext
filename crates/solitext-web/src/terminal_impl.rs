@@ -1,9 +1,6 @@
-use std::io::{Stdout, Write};
-use solitext_core::terminal::{
-    Black, Blue, Color, Cyan, Green, Key, LightBlack, LightBlue, LightCyan, LightGreen, 
-    LightMagenta, LightRed, LightWhite, LightYellow, Magenta, Red, Reset, Terminal, 
-    TerminalInput, White, Yellow
-};
+use std::io::Write;
+use solitext_core::terminal::Key;
+use solitext_core::terminal::adapters::{ColorProvider, TerminalProvider};
 
 // This is a stub implementation that would be replaced with real web implementation
 
@@ -53,8 +50,8 @@ impl Write for WebRawTerminal {
     }
 }
 
-// Implement Terminal for WebStdout
-impl Terminal for WebStdout {
+// Implement TerminalProvider for WebStdout
+impl TerminalProvider for WebStdout {
     type RawTerminal = WebRawTerminal;
     
     fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal> {
@@ -83,8 +80,27 @@ impl Terminal for WebStdout {
     }
 }
 
+// Define our own color types to implement ColorProvider
+pub struct WebBlack;
+pub struct WebRed;
+pub struct WebGreen;
+pub struct WebYellow;
+pub struct WebBlue;
+pub struct WebMagenta;
+pub struct WebCyan;
+pub struct WebWhite;
+pub struct WebLightBlack;
+pub struct WebLightRed;
+pub struct WebLightGreen;
+pub struct WebLightYellow;
+pub struct WebLightBlue;
+pub struct WebLightMagenta;
+pub struct WebLightCyan;
+pub struct WebLightWhite;
+pub struct WebReset;
+
 // Color implementations for web
-impl Color for Black {
+impl ColorProvider for WebBlack {
     fn fg_code(&self) -> String {
         String::from("\x1b[30m")
     }
@@ -93,7 +109,7 @@ impl Color for Black {
     }
 }
 
-impl Color for Red {
+impl ColorProvider for WebRed {
     fn fg_code(&self) -> String {
         String::from("\x1b[31m")
     }
@@ -102,7 +118,7 @@ impl Color for Red {
     }
 }
 
-impl Color for Green {
+impl ColorProvider for WebGreen {
     fn fg_code(&self) -> String {
         String::from("\x1b[32m")
     }
@@ -111,7 +127,7 @@ impl Color for Green {
     }
 }
 
-impl Color for Yellow {
+impl ColorProvider for WebYellow {
     fn fg_code(&self) -> String {
         String::from("\x1b[33m")
     }
@@ -120,7 +136,7 @@ impl Color for Yellow {
     }
 }
 
-impl Color for Blue {
+impl ColorProvider for WebBlue {
     fn fg_code(&self) -> String {
         String::from("\x1b[34m")
     }
@@ -129,7 +145,7 @@ impl Color for Blue {
     }
 }
 
-impl Color for Magenta {
+impl ColorProvider for WebMagenta {
     fn fg_code(&self) -> String {
         String::from("\x1b[35m")
     }
@@ -138,7 +154,7 @@ impl Color for Magenta {
     }
 }
 
-impl Color for Cyan {
+impl ColorProvider for WebCyan {
     fn fg_code(&self) -> String {
         String::from("\x1b[36m")
     }
@@ -147,7 +163,7 @@ impl Color for Cyan {
     }
 }
 
-impl Color for White {
+impl ColorProvider for WebWhite {
     fn fg_code(&self) -> String {
         String::from("\x1b[37m")
     }
@@ -156,7 +172,7 @@ impl Color for White {
     }
 }
 
-impl Color for LightBlack {
+impl ColorProvider for WebLightBlack {
     fn fg_code(&self) -> String {
         String::from("\x1b[90m")
     }
@@ -165,7 +181,7 @@ impl Color for LightBlack {
     }
 }
 
-impl Color for LightRed {
+impl ColorProvider for WebLightRed {
     fn fg_code(&self) -> String {
         String::from("\x1b[91m")
     }
@@ -174,7 +190,7 @@ impl Color for LightRed {
     }
 }
 
-impl Color for LightGreen {
+impl ColorProvider for WebLightGreen {
     fn fg_code(&self) -> String {
         String::from("\x1b[92m")
     }
@@ -183,7 +199,7 @@ impl Color for LightGreen {
     }
 }
 
-impl Color for LightYellow {
+impl ColorProvider for WebLightYellow {
     fn fg_code(&self) -> String {
         String::from("\x1b[93m")
     }
@@ -192,7 +208,7 @@ impl Color for LightYellow {
     }
 }
 
-impl Color for LightBlue {
+impl ColorProvider for WebLightBlue {
     fn fg_code(&self) -> String {
         String::from("\x1b[94m")
     }
@@ -201,7 +217,7 @@ impl Color for LightBlue {
     }
 }
 
-impl Color for LightMagenta {
+impl ColorProvider for WebLightMagenta {
     fn fg_code(&self) -> String {
         String::from("\x1b[95m")
     }
@@ -210,7 +226,7 @@ impl Color for LightMagenta {
     }
 }
 
-impl Color for LightCyan {
+impl ColorProvider for WebLightCyan {
     fn fg_code(&self) -> String {
         String::from("\x1b[96m")
     }
@@ -219,7 +235,7 @@ impl Color for LightCyan {
     }
 }
 
-impl Color for LightWhite {
+impl ColorProvider for WebLightWhite {
     fn fg_code(&self) -> String {
         String::from("\x1b[97m")
     }
@@ -228,7 +244,7 @@ impl Color for LightWhite {
     }
 }
 
-impl Color for Reset {
+impl ColorProvider for WebReset {
     fn fg_code(&self) -> String {
         String::from("\x1b[39m")
     }
@@ -268,7 +284,7 @@ impl Default for WebInput {
     }
 }
 
-impl TerminalInput for WebInput {
+impl solitext_core::terminal::TerminalInput for WebInput {
     type Keys = Self;
     
     fn keys(self) -> Self::Keys {

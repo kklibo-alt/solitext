@@ -1,7 +1,7 @@
 //! Draws a column of cards where each card is offset from the card below it.
 
 use super::Draw;
-use crate::game_state::{CardState, GameState};
+use crate::game_state::GameState;
 use crate::terminal::Terminal;
 use std::io::Write;
 

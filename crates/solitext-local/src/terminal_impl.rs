@@ -1,10 +1,9 @@
-use std::io::{Stdout, Write, stdin, stdout};
-use solitext_core::terminal::{
-    Black, Blue, Color, Cyan, Green, Key, LightBlack, LightBlue, LightCyan, LightGreen, 
-    LightMagenta, LightRed, LightWhite, LightYellow, Magenta, Red, Reset, Terminal, 
-    TerminalInput, White, Yellow
-};
+use std::io::{Write, stdin, stdout};
 use termion;
+use termion::input::TermRead;
+use solitext_core::terminal::Key;
+use solitext_core::terminal::adapters::ColorProvider;
+use solitext_core::terminal::adapters::TerminalProvider;
 
 // Map termion Keys to our Key enum
 pub fn map_termion_key(key: termion::event::Key) -> Key {
@@ -30,8 +29,27 @@ pub fn map_termion_key(key: termion::event::Key) -> Key {
     }
 }
 
-// Implement Color for each color type
-impl Color for Black {
+// Define our own color types to implement ColorProvider
+pub struct LocalBlack;
+pub struct LocalRed;
+pub struct LocalGreen;
+pub struct LocalYellow;
+pub struct LocalBlue;
+pub struct LocalMagenta;
+pub struct LocalCyan;
+pub struct LocalWhite;
+pub struct LocalLightBlack;
+pub struct LocalLightRed;
+pub struct LocalLightGreen;
+pub struct LocalLightYellow;
+pub struct LocalLightBlue;
+pub struct LocalLightMagenta;
+pub struct LocalLightCyan;
+pub struct LocalLightWhite;
+pub struct LocalReset;
+
+// Implement ColorProvider for each color type
+impl ColorProvider for LocalBlack {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Black))
     }
@@ -40,7 +58,7 @@ impl Color for Black {
     }
 }
 
-impl Color for Red {
+impl ColorProvider for LocalRed {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Red))
     }
@@ -49,7 +67,7 @@ impl Color for Red {
     }
 }
 
-impl Color for Green {
+impl ColorProvider for LocalGreen {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Green))
     }
@@ -58,7 +76,7 @@ impl Color for Green {
     }
 }
 
-impl Color for Yellow {
+impl ColorProvider for LocalYellow {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Yellow))
     }
@@ -67,7 +85,7 @@ impl Color for Yellow {
     }
 }
 
-impl Color for Blue {
+impl ColorProvider for LocalBlue {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Blue))
     }
@@ -76,7 +94,7 @@ impl Color for Blue {
     }
 }
 
-impl Color for Magenta {
+impl ColorProvider for LocalMagenta {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Magenta))
     }
@@ -85,7 +103,7 @@ impl Color for Magenta {
     }
 }
 
-impl Color for Cyan {
+impl ColorProvider for LocalCyan {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Cyan))
     }
@@ -94,7 +112,7 @@ impl Color for Cyan {
     }
 }
 
-impl Color for White {
+impl ColorProvider for LocalWhite {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::White))
     }
@@ -103,7 +121,7 @@ impl Color for White {
     }
 }
 
-impl Color for LightBlack {
+impl ColorProvider for LocalLightBlack {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightBlack))
     }
@@ -112,7 +130,7 @@ impl Color for LightBlack {
     }
 }
 
-impl Color for LightRed {
+impl ColorProvider for LocalLightRed {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightRed))
     }
@@ -121,7 +139,7 @@ impl Color for LightRed {
     }
 }
 
-impl Color for LightGreen {
+impl ColorProvider for LocalLightGreen {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightGreen))
     }
@@ -130,7 +148,7 @@ impl Color for LightGreen {
     }
 }
 
-impl Color for LightYellow {
+impl ColorProvider for LocalLightYellow {
     fn fg_code(&self) -> String {
         // Use Yellow since there's no LightYellow in termion
         format!("{}", termion::color::Fg(termion::color::Yellow))
@@ -140,7 +158,7 @@ impl Color for LightYellow {
     }
 }
 
-impl Color for LightBlue {
+impl ColorProvider for LocalLightBlue {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightBlue))
     }
@@ -149,7 +167,7 @@ impl Color for LightBlue {
     }
 }
 
-impl Color for LightMagenta {
+impl ColorProvider for LocalLightMagenta {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightMagenta))
     }
@@ -158,7 +176,7 @@ impl Color for LightMagenta {
     }
 }
 
-impl Color for LightCyan {
+impl ColorProvider for LocalLightCyan {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightCyan))
     }
@@ -167,7 +185,7 @@ impl Color for LightCyan {
     }
 }
 
-impl Color for LightWhite {
+impl ColorProvider for LocalLightWhite {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::LightWhite))
     }
@@ -176,7 +194,7 @@ impl Color for LightWhite {
     }
 }
 
-impl Color for Reset {
+impl ColorProvider for LocalReset {
     fn fg_code(&self) -> String {
         format!("{}", termion::color::Fg(termion::color::Reset))
     }
@@ -185,12 +203,33 @@ impl Color for Reset {
     }
 }
 
-// Implement Terminal for Stdout
-impl Terminal for Stdout {
-    type RawTerminal = termion::raw::RawTerminal<Stdout>;
+// Define our own terminal type
+pub struct LocalTerminal {
+    stdout: std::io::Stdout,
+}
+
+impl Default for LocalTerminal {
+    fn default() -> Self {
+        Self { stdout: stdout() }
+    }
+}
+
+impl Write for LocalTerminal {
+    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+        self.stdout.write(buf)
+    }
+    
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.stdout.flush()
+    }
+}
+
+// Implement TerminalProvider for LocalTerminal
+impl TerminalProvider for LocalTerminal {
+    type RawTerminal = termion::raw::RawTerminal<std::io::Stdout>;
     
     fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal> {
-        termion::raw::IntoRawMode::into_raw_mode(self)
+        termion::raw::IntoRawMode::into_raw_mode(self.stdout)
     }
     
     fn goto(x: u16, y: u16) -> String {
@@ -211,6 +250,7 @@ impl Terminal for Stdout {
 }
 
 // Implement TerminalInput for Stdin
+#[derive(Default)]
 pub struct Stdin;
 
 impl Stdin {
@@ -219,7 +259,7 @@ impl Stdin {
     }
 }
 
-impl TerminalInput for Stdin {
+impl solitext_core::terminal::TerminalInput for Stdin {
     type Keys = termion::input::Keys<std::io::Stdin>;
     
     fn keys(self) -> Self::Keys {

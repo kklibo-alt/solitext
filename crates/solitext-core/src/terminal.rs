@@ -151,4 +151,100 @@ pub trait TerminalInput {
     
     /// Read the next key from the input stream
     fn read_key(keys: &mut Self::Keys) -> Option<std::io::Result<Key>>;
+}
+
+// Add a re-export module for the terminal implementations
+pub mod adapters {
+    //! This module contains marker traits and type definitions needed for terminal adapters.
+    //! These are used to overcome Rust's orphan rules when implementing traits for external types.
+    
+    use super::*;
+    
+    /// Marker trait for terminal color implementations
+    pub trait ColorProvider {
+        /// Get the foreground color code as a string
+        fn fg_code(&self) -> String;
+        
+        /// Get the background color code as a string
+        fn bg_code(&self) -> String;
+    }
+    
+    /// Wrapper struct for color implementations
+    #[derive(Clone, Copy)]
+    pub struct ColorWrapper<T>(pub T);
+    
+    // Automatically implement Color for any type that implements ColorProvider
+    impl<T: ColorProvider> Color for ColorWrapper<T> {
+        fn fg_code(&self) -> String {
+            self.0.fg_code()
+        }
+        
+        fn bg_code(&self) -> String {
+            self.0.bg_code()
+        }
+    }
+    
+    /// Marker trait for terminal implementations
+    pub trait TerminalProvider {
+        /// The type used for raw terminal mode
+        type RawTerminal;
+        
+        /// Put the terminal into raw mode
+        fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal>;
+        
+        /// Get the cursor goto escape sequence
+        fn goto(x: u16, y: u16) -> String;
+        
+        /// Get the cursor hide escape sequence
+        fn hide() -> String;
+        
+        /// Get the cursor show escape sequence
+        fn show() -> String;
+        
+        /// Get the clear screen escape sequence
+        fn clear_all() -> String;
+    }
+    
+    /// Wrapper struct for terminal implementations
+    pub struct TerminalWrapper<T>(pub T);
+    
+    impl<T: TerminalProvider> Terminal for TerminalWrapper<T> {
+        type RawTerminal = T::RawTerminal;
+        
+        fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal> {
+            self.0.into_raw_mode()
+        }
+        
+        fn goto(x: u16, y: u16) -> String {
+            T::goto(x, y)
+        }
+        
+        fn hide() -> String {
+            T::hide()
+        }
+        
+        fn show() -> String {
+            T::show()
+        }
+        
+        fn clear_all() -> String {
+            T::clear_all()
+        }
+    }
+    
+    impl<T> Default for TerminalWrapper<T> where T: Default {
+        fn default() -> Self {
+            TerminalWrapper(T::default())
+        }
+    }
+    
+    impl<T: std::io::Write> std::io::Write for TerminalWrapper<T> {
+        fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
+            self.0.write(buf)
+        }
+        
+        fn flush(&mut self) -> std::io::Result<()> {
+            self.0.flush()
+        }
+    }
 } 

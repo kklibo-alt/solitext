@@ -15,16 +15,6 @@ where
         writeln!(self.stdout, "{}", T::clear_all()).unwrap();
     }
 
-    // Get the default background color
-    pub(crate) fn default_bg<C: Color>(&self, color: C) -> C {
-        color
-    }
-    
-    // Get the default foreground color
-    pub(crate) fn default_fg<C: Color>(&self, color: C) -> C {
-        color
-    }
-
     // Set colors
     pub(crate) fn set_colors<C1: Color, C2: Color>(&mut self, foreground: C1, background: C2) {
         writeln!(

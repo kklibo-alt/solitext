@@ -3,7 +3,7 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::selection::Selection;
-use crate::terminal::{Blue, Color, LightGreen, LightYellow, Terminal};
+use crate::terminal::{Color, Terminal};
 use std::io::Write;
 
 impl<T> Draw<T>
