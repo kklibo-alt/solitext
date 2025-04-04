@@ -5,11 +5,10 @@ use termion::cursor;
 use termion::event::Key as TermionKey;
 use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
-use termion::screen::AlternateScreen;
 
 /// A termion-based implementation of the Terminal interface
 pub struct TermionTerminal {
-    stdout: RawTerminal<AlternateScreen<Stdout>>,
+    stdout: RawTerminal<Stdout>,
 }
 
 impl Write for TermionTerminal {
@@ -100,17 +99,23 @@ impl Terminal for TermionTerminal {
         // Raw mode will be exited when the terminal is dropped
         Ok(())
     }
+
+    fn flush(&mut self) -> io::Result<()> {
+        self.stdout.flush()
+    }
 }
 
 /// A termion-based implementation of the TerminalKeys interface
-pub struct TermionKeys {
-    stdin: Stdin,
-}
+pub struct TermionKeys;
 
 impl TerminalKeys for TermionKeys {
     fn next_key(&mut self) -> io::Result<Option<KeyEvent>> {
-        match self.stdin.keys().next() {
-            Some(Ok(key)) => Ok(Some(convert_termion_key(key))),
+        // Create a fresh stdin for each call
+        match stdin().events().next() {
+            Some(Ok(event)) => match event {
+                termion::event::Event::Key(key) => Ok(Some(convert_termion_key(key))),
+                _ => Ok(None),
+            },
             Some(Err(e)) => Err(e),
             None => Ok(None),
         }
@@ -137,8 +142,7 @@ fn convert_termion_key(key: TermionKey) -> KeyEvent {
         TermionKey::Esc => KeyEvent::Esc,
         TermionKey::F(n) => KeyEvent::F(n),
         TermionKey::Null => KeyEvent::Null,
-        // Map other keys to reasonable defaults
-        TermionKey::Backspace2 => KeyEvent::Backspace,
+        // Map any other keys to Null
         _ => KeyEvent::Null,
     }
 }
@@ -151,11 +155,11 @@ impl TerminalFactory for TermionFactory {
     type Keys = TermionKeys;
 
     fn create_terminal(&self) -> io::Result<Self::Terminal> {
-        let stdout = stdout().into_alternate_screen()?.into_raw_mode()?;
+        let stdout = stdout().into_raw_mode()?;
         Ok(TermionTerminal { stdout })
     }
 
     fn create_keys(&self) -> Self::Keys {
-        TermionKeys { stdin: stdin() }
+        TermionKeys
     }
 } 
