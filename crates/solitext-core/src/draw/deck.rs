@@ -2,8 +2,14 @@
 
 use super::Draw;
 use crate::game_state::{CardState, GameMode, GameState};
+use crate::terminal::Terminal;
+use std::io::Write;
 
-impl Draw {
+impl<T> Draw<T> 
+where 
+    T: Terminal + Write,
+    T::RawTerminal: Write,
+{
     pub(super) fn draw_deck_selection_cursor(&mut self, col: usize, row: usize) {
         self.draw_text(col + 2, row, "◂");
         self.draw_text(col - 2, row, "▸");

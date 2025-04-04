@@ -3,8 +3,14 @@
 use super::Draw;
 use crate::cards::Suit;
 use crate::game_state::{CardState, GameState};
+use crate::terminal::Terminal;
+use std::io::Write;
 
-impl Draw {
+impl<T> Draw<T> 
+where 
+    T: Terminal + Write,
+    T::RawTerminal: Write,
+{
     pub(super) fn draw_pile_selection_cursor(&mut self, col: usize, index: usize) {
         let row = Self::PILES_INIT_ROW + Self::PILES_ROW_STEP * index;
         self.draw_text(col - 1, row, "[");

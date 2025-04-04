@@ -8,10 +8,14 @@ mod info;
 
 use crate::selection::Selection;
 use crate::terminal::Terminal;
-use std::io::{stdout, Write};
+use std::io::{Write};
 
 // Generic Draw struct that works with any terminal implementation
-pub struct Draw<T: Terminal + Write> {
+pub struct Draw<T>
+where 
+    T: Terminal + Write,
+    T::RawTerminal: Write,
+{
     pub stdout: T::RawTerminal,
     pub cursor: Selection,
     pub selected: Option<Selection>,
@@ -20,7 +24,11 @@ pub struct Draw<T: Terminal + Write> {
     pub debug_mode: bool,
 }
 
-impl<T: Terminal + Write> Draw<T> {
+impl<T> Draw<T> 
+where 
+    T: Terminal + Write,
+    T::RawTerminal: Write,
+{
     pub fn new(terminal: T) -> Self {
         Self {
             stdout: terminal.into_raw_mode().expect("Failed to enter raw mode"),
