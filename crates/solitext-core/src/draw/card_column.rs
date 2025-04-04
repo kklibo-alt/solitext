@@ -34,13 +34,13 @@ impl Draw {
                 if !matches!(at_edge, Some(CardColumnScroll::AtMaxRow)) {
                     let white = TermionColor::white();
                     let green = TermionColor::light_green();
-                    self.set_colors(white, green);
+                    self.set_colors(&white, &green);
                     self.draw_text(col - 1, row, "↑  ↑");
                 }
                 if !matches!(at_edge, Some(CardColumnScroll::AtMinRow)) {
                     let white = TermionColor::white();
                     let green = TermionColor::light_green();
-                    self.set_colors(white, green);
+                    self.set_colors(&white, &green);
                     self.draw_text(
                         col - 1,
                         row - 1 + (visible_cards.len() * Self::COLUMNS_ROW_STEP),

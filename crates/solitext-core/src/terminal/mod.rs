@@ -72,6 +72,12 @@ pub trait TerminalColor: Send + Sync {
     /// Return a color that is Light Blue
     fn light_blue() -> Box<dyn TerminalColor> where Self: Sized;
     
+    /// Return a color that is Yellow
+    fn yellow() -> Box<dyn TerminalColor> where Self: Sized;
+    
+    /// Return a color that is Light Yellow
+    fn light_yellow() -> Box<dyn TerminalColor> where Self: Sized;
+    
     /// Return a color that is reset color
     fn reset() -> Box<dyn TerminalColor> where Self: Sized;
     

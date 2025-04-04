@@ -18,11 +18,11 @@ impl Draw {
                 if card.suit.is_red() {
                     let red = TermionColor::red();
                     let white = TermionColor::white();
-                    self.set_colors(red, white);
+                    self.set_colors(&red, &white);
                 } else {
                     let black = TermionColor::black();
                     let white = TermionColor::white();
-                    self.set_colors(black, white);
+                    self.set_colors(&black, &white);
                 }
                 card.to_string()
             }
@@ -31,17 +31,17 @@ impl Draw {
                     if card.suit.is_red() {
                         let light_red = TermionColor::light_red();
                         let black = TermionColor::black();
-                        self.set_colors(light_red, black);
+                        self.set_colors(&light_red, &black);
                     } else {
                         let light_black = TermionColor::light_black();
                         let black = TermionColor::black();
-                        self.set_colors(light_black, black);
+                        self.set_colors(&light_black, &black);
                     }
                     card.to_string()
                 } else {
                     let light_green = TermionColor::light_green();
                     let light_black = TermionColor::light_black();
-                    self.set_colors(light_green, light_black);
+                    self.set_colors(&light_green, &light_black);
                     "st".to_string()
                 }
             }

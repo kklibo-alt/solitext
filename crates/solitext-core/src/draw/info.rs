@@ -2,18 +2,19 @@
 
 use super::Draw;
 use crate::game_state::GameState;
+use crate::terminal::{TerminalColor, termion_impl::TermionColor};
 use std::io::Write;
 use std::{thread, time};
-use termion::color;
 
 impl Draw {
     pub(super) fn display_info(&mut self) {
-        use color::*;
-
-        self.set_colors(LightYellow, Self::default_bg());
+        let light_yellow = TermionColor::light_yellow();
+        let default_bg = self.default_bg();
+        self.set_colors(&light_yellow, &default_bg);
         self.draw_text(1, 1, "Solitext");
 
-        self.set_colors(LightBlack, Self::default_bg());
+        let light_black = TermionColor::light_black();
+        self.set_colors(&light_black, &default_bg);
         self.draw_text(32, 1, "h: Help  Esc: Menu");
         self.draw_text(2, Self::CURSOR_ROW + 1, "Space: Select/Move cards");
         self.draw_text(
@@ -41,21 +42,32 @@ impl Draw {
             thread::sleep(time::Duration::from_millis(300));
         }
 
-        self.set_colors(color::Blue, Self::default_bg());
+        let blue = TermionColor::light_blue();
+        let default_bg = self.default_bg();
+        self.set_colors(&blue, &default_bg);
         draw_box(self, 3);
         pause();
-        self.set_colors(color::Green, Self::default_bg());
+        
+        let green = TermionColor::light_green();
+        self.set_colors(&green, &default_bg);
         draw_box(self, 2);
         pause();
-        self.set_colors(color::Red, Self::default_bg());
+        
+        let red = TermionColor::red();
+        self.set_colors(&red, &default_bg);
         draw_box(self, 1);
         pause();
 
-        self.set_colors(color::LightYellow, color::LightBlue);
+        let light_yellow = TermionColor::light_yellow();
+        let light_blue = TermionColor::light_blue();
+        self.set_colors(&light_yellow, &light_blue);
         self.draw_text(CENTER.0 - 3, CENTER.1, "YOU WIN");
         pause();
         pause();
-        self.set_colors(Self::default_fg(), Self::default_bg());
+        
+        let default_fg = self.default_fg();
+        let default_bg = self.default_bg();
+        self.set_colors(&default_fg, &default_bg);
         self.draw_text(CENTER.0 - 8, CENTER.1 + 4, "Play again? (y/n)");
     }
 
@@ -68,13 +80,18 @@ impl Draw {
 
         self.display_victory_message();
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        let default_fg = self.default_fg();
+        let default_bg = self.default_bg();
+        self.set_colors(&default_fg, &default_bg);
+        self.terminal.flush().unwrap();
     }
 
     pub fn display_start_screen(&mut self) {
         self.clear_screen();
-        self.set_colors(color::LightYellow, Self::default_bg());
+        
+        let light_yellow = TermionColor::light_yellow();
+        let default_bg = self.default_bg();
+        self.set_colors(&light_yellow, &default_bg);
         self.draw_text(16, 1, "Solitext    ♥ ♠ ♦ ♣");
 
         let lines = r#"1: New Game (Draw One)
@@ -82,8 +99,9 @@ impl Draw {
 Esc: Quit"#;
         self.draw_text_box(lines);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        let default_fg = self.default_fg();
+        self.set_colors(&default_fg, &default_bg);
+        self.terminal.flush().unwrap();
     }
 
     pub fn display_game_menu(&mut self, game_state: &mut GameState) {
@@ -100,8 +118,10 @@ q: Quit
 Esc: Return to game"#;
         self.draw_text_box(lines);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        let default_fg = self.default_fg();
+        let default_bg = self.default_bg();
+        self.set_colors(&default_fg, &default_bg);
+        self.terminal.flush().unwrap();
     }
 
     pub fn display_help(&mut self, game_state: &mut GameState) {
@@ -120,7 +140,29 @@ Esc: Return to game"#;
  Ctrl+c: Quit"#;
         self.draw_text_box(lines);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        let default_fg = self.default_fg();
+        let default_bg = self.default_bg();
+        self.set_colors(&default_fg, &default_bg);
+        self.terminal.flush().unwrap();
+    }
+
+    pub(super) fn display_info_section(&mut self) {
+        let black = TermionColor::black();
+        let yellow = TermionColor::yellow();
+        let light_yellow = TermionColor::light_yellow();
+        let white = TermionColor::white();
+        let light_black = TermionColor::light_black();
+        
+        self.set_colors(&light_yellow, &black);
+        self.draw_text(2, 20, "[space] - select card");
+        
+        self.set_colors(&yellow, &black);
+        self.draw_text(2, 21, "[enter] - confirm movement");
+        
+        self.set_colors(&white, &black);
+        self.draw_text(2, 22, "[esc]   - cancel");
+        
+        self.set_colors(&light_black, &black);
+        self.draw_text(2, 24, "quit: [ctrl+c]");
     }
 }

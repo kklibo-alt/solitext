@@ -28,6 +28,8 @@ enum TermionColorVariant {
     LightBlack,
     LightRed,
     LightBlue,
+    Yellow,
+    LightYellow,
     Reset,
 }
 
@@ -43,6 +45,8 @@ impl TermionColor {
             TermionColorVariant::LightBlack => write!(w, "{}", color::Fg(color::LightBlack)),
             TermionColorVariant::LightRed => write!(w, "{}", color::Fg(color::LightRed)),
             TermionColorVariant::LightBlue => write!(w, "{}", color::Fg(color::LightBlue)),
+            TermionColorVariant::Yellow => write!(w, "{}", color::Fg(color::Yellow)),
+            TermionColorVariant::LightYellow => write!(w, "{}", color::Fg(color::LightYellow)),
             TermionColorVariant::Reset => write!(w, "{}", color::Fg(color::Reset)),
         }
     }
@@ -58,6 +62,8 @@ impl TermionColor {
             TermionColorVariant::LightBlack => write!(w, "{}", color::Bg(color::LightBlack)),
             TermionColorVariant::LightRed => write!(w, "{}", color::Bg(color::LightRed)),
             TermionColorVariant::LightBlue => write!(w, "{}", color::Bg(color::LightBlue)),
+            TermionColorVariant::Yellow => write!(w, "{}", color::Bg(color::Yellow)),
+            TermionColorVariant::LightYellow => write!(w, "{}", color::Bg(color::LightYellow)),
             TermionColorVariant::Reset => write!(w, "{}", color::Bg(color::Reset)),
         }
     }
@@ -117,6 +123,20 @@ impl TerminalColor for TermionColor {
         Box::new(Self {
             color_variant: TermionColorVariant::LightBlue,
             is_red_color: false,
+        })
+    }
+    
+    fn yellow() -> Box<dyn TerminalColor> {
+        Box::new(Self {
+            color_variant: TermionColorVariant::Yellow,
+            is_red_color: true,
+        })
+    }
+    
+    fn light_yellow() -> Box<dyn TerminalColor> {
+        Box::new(Self {
+            color_variant: TermionColorVariant::LightYellow,
+            is_red_color: true,
         })
     }
 

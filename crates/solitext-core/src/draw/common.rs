@@ -19,10 +19,10 @@ impl Draw {
 
     pub(crate) fn set_colors(
         &mut self,
-        foreground: Box<dyn TerminalColor>,
-        background: Box<dyn TerminalColor>,
+        foreground: &Box<dyn TerminalColor>,
+        background: &Box<dyn TerminalColor>,
     ) {
-        self.terminal.set_colors(&*foreground, &*background);
+        self.terminal.set_colors(&**foreground, &**background);
     }
 
     pub(crate) fn draw_box(&mut self, col1: usize, row1: usize, col2: usize, row2: usize) {
@@ -46,7 +46,11 @@ impl Draw {
         self.terminal.clear_screen();
         self.terminal.goto(1, 1);
         self.terminal.hide_cursor();
-        self.terminal.set_colors(&*self.default_fg(), &*self.default_bg());
+        
+        let fg = self.default_fg();
+        let bg = self.default_bg();
+        self.terminal.set_colors(&*fg, &*bg);
+        
         self.terminal.flush().unwrap();
     }
 
@@ -80,19 +84,19 @@ impl Draw {
         // Draw outer blue box
         let light_blue = TermionColor::light_blue();
         let black_bg = TermionColor::black();
-        self.set_colors(light_blue, black_bg);
+        self.set_colors(&light_blue, &black_bg);
         self.draw_centered_box(WIDTH, height + 2);
         
         // Draw inner white box
         let white = TermionColor::white();
         let black_bg = TermionColor::black();
-        self.set_colors(white, black_bg);
+        self.set_colors(&white, &black_bg);
         self.draw_centered_box(WIDTH - 2, height);
 
         // Draw text with black on white
         let light_black = TermionColor::light_black();
         let white_bg = TermionColor::white();
-        self.set_colors(light_black, white_bg);
+        self.set_colors(&light_black, &white_bg);
         let (col, mut row, _, _) = Self::centered_box_corners(WIDTH - 2, height);
 
         for line in lines.split('\n') {
