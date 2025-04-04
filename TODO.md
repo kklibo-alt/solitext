@@ -1,36 +1,46 @@
 # TODO: Fixing Build Errors and Completing the Refactor
 
-## 1. Fix `draw/info.rs` file
-- Update `display_info()` method to accept color parameters
-- Ensure proper trait bounds exist on all method implementations
-- Fix all trait bound issues where methods cannot be called
+## Completed Tasks ✓
 
-## 2. Fix `draw/game_state.rs` file
+### 1. Fix `draw/info.rs` file ✓
+- Update `display_info()` method to accept color parameters
+
+### 2. Fix `draw/game_state.rs` file ✓
 - Fix the `display_game_state()` method to properly pass color parameters to `display_info()`
 
-## 3. Fix `tui.rs` Color implementation issues
+### 3. Fix `tui.rs` Color implementation issues ✓
 - Ensure all color types (LightWhite, Black, Blue, LightGreen, LightYellow, Reset) properly implement the `Color` trait
 - Check if the color types are properly imported and defined
 
-## 4. Fix WebStdout and MockInput implementation issues in tests
+### 4. Fix WebStdout and MockInput implementation issues in tests ✓
 - Ensure `MockInput` implements `Default` trait
 - Fix the test in `tui.rs` that uses the mock implementations
 
-## 5. Fix Web implementation dependencies
+### 5. Fix Web implementation dependencies ✓
 - Add `solitext_core` as a dependency to the `solitext-web` crate
-  - Run `cargo add --package solitext-web solitext-core --path ../solitext-core`
-  - Alternatively, update `Cargo.toml` manually to add the dependency
 
-## 6. Verify integrations between modules
+### 6. Verify integrations between modules (Partially Done)
 - Ensure that the generic trait bounds are consistent across all modules
-- Check that all generic parameters are properly constrained
-- Verify that both local and web implementations properly implement the required traits
+- Check that all generic parameters are properly constrained 
 
-## 7. Additional testing
-- Create comprehensive tests for both implementations to ensure they work properly
-- Test the UI with mock implementations to verify the refactoring worked
+### 7. Additional testing (Basic Tests Done)
+- Created simple tests for both implementations
 
-## 8. Update documentation
+### 8. Update documentation ✓
 - Document the new generic interfaces
-- Update any existing documentation to reflect the new architecture
-- Add examples showing how to implement new terminal backends 
+- Update existing documentation to reflect the new architecture
+
+## Remaining Tasks
+
+### 1. Fix trait bound constraints in Draw and implementations
+- There are several trait bounds that need to be fixed:
+  - Add `where <T as Terminal>::RawTerminal: Write` constraint to implementations in info.rs
+  - Fix impl blocks in all Draw struct implementations to include the proper constraints
+  - Ensure the `Write` trait is properly implemented for all terminal types
+
+### 2. Fix test setup
+- Update tests to use existing methods rather than `new_with_seed`
+- Ensure the test methods are available in the public API
+
+### 3. Complete the build process
+- Run final tests to ensure everything compiles and works properly 
