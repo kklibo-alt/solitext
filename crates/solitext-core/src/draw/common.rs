@@ -1,33 +1,28 @@
 //! Common drawing code.
 
 use super::Draw;
+use crate::terminal::TerminalColor;
 use std::io::Write;
-use termion::{clear, color, cursor};
 
 impl Draw {
     pub(crate) fn clear_screen(&mut self) {
-        writeln!(self.stdout, "{}", clear::All,).unwrap();
+        self.terminal.clear_screen().unwrap();
     }
 
-    pub(crate) fn default_bg() -> impl color::Color {
-        color::Black
+    pub(crate) fn default_bg() -> TerminalColor {
+        TerminalColor::Black
     }
-    pub(crate) fn default_fg() -> impl color::Color {
-        color::LightWhite
+    pub(crate) fn default_fg() -> TerminalColor {
+        TerminalColor::LightWhite
     }
 
     pub(crate) fn set_colors(
         &mut self,
-        foreground: impl color::Color,
-        background: impl color::Color,
+        foreground: TerminalColor,
+        background: TerminalColor,
     ) {
-        writeln!(
-            self.stdout,
-            "{}{}",
-            color::Fg(foreground),
-            color::Bg(background),
-        )
-        .unwrap();
+        self.terminal.set_fg(foreground).unwrap();
+        self.terminal.set_bg(background).unwrap();
     }
 
     pub(crate) fn draw_box(&mut self, col1: usize, row1: usize, col2: usize, row2: usize) {
@@ -43,35 +38,26 @@ impl Draw {
         let col = u16::try_from(col).expect("column should fit in a u16");
         let row = u16::try_from(row).expect("row should fit in a u16");
 
-        writeln!(self.stdout, "{}{}", cursor::Goto(col, row), text).unwrap();
+        self.terminal.goto(col, row).unwrap();
+        write!(self.terminal, "{}", text).unwrap();
     }
 
     pub fn set_up_terminal(&mut self) {
-        writeln!(
-            self.stdout,
-            "{}{}{}{}{}",
-            color::Fg(Self::default_fg()),
-            color::Bg(Self::default_bg()),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Hide,
-        )
-        .unwrap();
-        self.stdout.flush().unwrap();
+        self.terminal.set_fg(Self::default_fg()).unwrap();
+        self.terminal.set_bg(Self::default_bg()).unwrap();
+        self.terminal.clear_screen().unwrap();
+        self.terminal.goto(1, 1).unwrap();
+        self.terminal.hide_cursor().unwrap();
+        self.terminal.flush().unwrap();
     }
 
     pub fn restore_terminal(&mut self) {
-        writeln!(
-            self.stdout,
-            "{}{}{}{}{}",
-            color::Fg(color::Reset),
-            color::Bg(color::Reset),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Show,
-        )
-        .unwrap();
-        self.stdout.flush().unwrap();
+        self.terminal.reset_fg().unwrap();
+        self.terminal.reset_bg().unwrap();
+        self.terminal.clear_screen().unwrap();
+        self.terminal.goto(1, 1).unwrap();
+        self.terminal.show_cursor().unwrap();
+        self.terminal.flush().unwrap();
     }
 
     fn centered_box_corners(width: usize, height: usize) -> (usize, usize, usize, usize) {
@@ -93,12 +79,12 @@ impl Draw {
         let height = lines.split('\n').count();
 
         const WIDTH: usize = 38;
-        self.set_colors(color::LightBlue, Self::default_bg());
+        self.set_colors(TerminalColor::LightBlue, Self::default_bg());
         self.draw_centered_box(WIDTH, height + 2);
-        self.set_colors(color::White, Self::default_bg());
+        self.set_colors(TerminalColor::White, Self::default_bg());
         self.draw_centered_box(WIDTH - 2, height);
 
-        self.set_colors(color::LightBlack, color::White);
+        self.set_colors(TerminalColor::LightBlack, TerminalColor::White);
         let (col, mut row, _, _) = Self::centered_box_corners(WIDTH - 2, height);
 
         for line in lines.split('\n') {

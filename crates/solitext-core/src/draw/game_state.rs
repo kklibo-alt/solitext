@@ -3,7 +3,7 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::selection::Selection;
-use termion::color;
+use crate::terminal::TerminalColor;
 
 impl Draw {
     pub fn display_game_state(&mut self, game_state: &GameState) {
@@ -15,13 +15,13 @@ impl Draw {
         self.display_columns(game_state);
         self.display_piles(game_state);
 
-        self.set_colors(color::Blue, Self::default_bg());
+        self.set_colors(TerminalColor::Blue, Self::default_bg());
         self.display_collection_selection_cursor();
 
-        self.set_colors(Self::default_fg(), color::LightGreen);
+        self.set_colors(Self::default_fg(), TerminalColor::LightGreen);
         self.display_card_selection_cursor(self.cursor, game_state);
 
-        self.set_colors(Self::default_fg(), color::LightYellow);
+        self.set_colors(Self::default_fg(), TerminalColor::LightYellow);
         if let Some(selected) = self.selected {
             self.display_card_selection_cursor(selected, game_state);
         }

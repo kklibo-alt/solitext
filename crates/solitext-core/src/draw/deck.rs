@@ -2,7 +2,7 @@
 
 use super::Draw;
 use crate::game_state::{CardState, GameMode, GameState};
-use termion::color;
+use crate::terminal::TerminalColor;
 
 impl Draw {
     pub(super) fn draw_deck_selection_cursor(&mut self, col: usize, row: usize) {
@@ -23,12 +23,11 @@ impl Draw {
     const DECK_ROW_STEP: usize = 1;
     const DECK_DRAWN_MAX_DISPLAY_CARDS: usize = 3;
     pub(super) fn display_deck(&mut self, game_state: &GameState) {
-        use color::*;
         let (col, mut row) = (Self::DECK_INIT_COL, Self::DECK_INIT_ROW);
         if let Some(card) = game_state.deck.last() {
             self.display_card(*card, CardState::FaceDown, col, row);
         } else {
-            self.set_colors(Green, LightBlack);
+            self.set_colors(TerminalColor::Green, TerminalColor::LightBlack);
             self.draw_text(col, row, " O ");
         };
 

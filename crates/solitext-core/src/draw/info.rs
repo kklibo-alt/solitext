@@ -2,18 +2,16 @@
 
 use super::Draw;
 use crate::game_state::GameState;
+use crate::terminal::TerminalColor;
 use std::io::Write;
 use std::{thread, time};
-use termion::color;
 
 impl Draw {
     pub(super) fn display_info(&mut self) {
-        use color::*;
-
-        self.set_colors(LightYellow, Self::default_bg());
+        self.set_colors(TerminalColor::LightYellow, Self::default_bg());
         self.draw_text(1, 1, "Solitext");
 
-        self.set_colors(LightBlack, Self::default_bg());
+        self.set_colors(TerminalColor::LightBlack, Self::default_bg());
         self.draw_text(32, 1, "h: Help  Esc: Menu");
         self.draw_text(2, Self::CURSOR_ROW + 1, "Space: Select/Move cards");
         self.draw_text(
@@ -41,22 +39,22 @@ impl Draw {
             thread::sleep(time::Duration::from_millis(300));
         }
 
-        self.set_colors(color::Blue, Self::default_bg());
+        self.set_colors(TerminalColor::Blue, Self::default_bg());
         draw_box(self, 3);
         pause();
-        self.set_colors(color::Green, Self::default_bg());
+        self.set_colors(TerminalColor::Green, Self::default_bg());
         draw_box(self, 2);
         pause();
-        self.set_colors(color::Red, Self::default_bg());
+        self.set_colors(TerminalColor::Red, Self::default_bg());
         draw_box(self, 1);
         pause();
 
-        self.set_colors(color::LightYellow, color::LightBlue);
+        self.set_colors(TerminalColor::LightYellow, TerminalColor::LightBlue);
         self.draw_text(CENTER.0 - 3, CENTER.1, "YOU WIN");
         pause();
         pause();
         self.set_colors(Self::default_fg(), Self::default_bg());
-        self.draw_text(CENTER.0 - 8, CENTER.1 + 4, "Play again? (y/n)");
+        self.draw_text(CENTER.0 - 8, CENTER.1 + 4, "Play again? (1/3/q)");
     }
 
     pub fn display_victory(&mut self, game_state: &mut GameState) {
@@ -69,12 +67,12 @@ impl Draw {
         self.display_victory_message();
 
         self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        self.terminal.flush().unwrap();
     }
 
     pub fn display_start_screen(&mut self) {
         self.clear_screen();
-        self.set_colors(color::LightYellow, Self::default_bg());
+        self.set_colors(TerminalColor::LightYellow, Self::default_bg());
         self.draw_text(16, 1, "Solitext    ♥ ♠ ♦ ♣");
 
         let lines = r#"1: New Game (Draw One)
@@ -83,7 +81,7 @@ Esc: Quit"#;
         self.draw_text_box(lines);
 
         self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        self.terminal.flush().unwrap();
     }
 
     pub fn display_game_menu(&mut self, game_state: &mut GameState) {
@@ -101,7 +99,7 @@ Esc: Return to game"#;
         self.draw_text_box(lines);
 
         self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        self.terminal.flush().unwrap();
     }
 
     pub fn display_help(&mut self, game_state: &mut GameState) {
@@ -121,6 +119,6 @@ Esc: Return to game"#;
         self.draw_text_box(lines);
 
         self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        self.terminal.flush().unwrap();
     }
 }

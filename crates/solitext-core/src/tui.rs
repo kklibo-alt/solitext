@@ -3,15 +3,14 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use std::io::stdin;
-use termion::event::Key;
-use termion::input::TermRead;
+use crate::terminal::{KeyEvent, TerminalFactory, TerminalKeys};
 
-pub struct Ui {
+pub struct Ui<F: TerminalFactory> {
     /// The deck used to seed the current game (if any)
     game_deck: Option<Vec<Card>>,
     ui_state: UiState,
     draw: Draw,
+    terminal_factory: F,
 }
 
 enum UiState {
@@ -23,20 +22,23 @@ enum UiState {
     Quit,
 }
 
-impl Default for Ui {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Ui {
-    pub fn new() -> Self {
+impl<F: TerminalFactory> Ui<F> 
+where 
+    F::Terminal: 'static
+{
+    pub fn new(terminal_factory: F) -> Self {
+        // Create the Draw with the terminal factory
+        let draw = Draw::with_terminal_factory(&terminal_factory)
+            .expect("Failed to create terminal");
+            
         Self {
             game_deck: None,
             ui_state: UiState::StartScreen,
-            draw: Draw::new(),
+            draw,
+            terminal_factory,
         }
     }
+    
     pub fn reset_for_new_game(&mut self) {
         self.draw.cursor = Selection::Deck;
         self.draw.selected = None;
@@ -167,30 +169,31 @@ impl Ui {
             return;
         }
 
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Left => self.draw.cursor.move_left(),
-                Key::Right => self.draw.cursor.move_right(),
-                Key::Up => self.draw.cursor.select_up(),
-                Key::Down => self.draw.cursor.select_down(),
-                Key::Home => self.draw.cursor = Selection::Deck,
-                Key::End => self.draw.cursor = Selection::Pile { index: 0 },
-                Key::Char(' ') => self.cards_action(game_state),
-                Key::Char('\n') => self.enter_key_action(game_state),
-                Key::Char('c') if self.draw.debug_mode => {
+        let mut keys = self.terminal_factory.create_keys();
+        
+        for key_result in keys.keys() {
+            match key_result.unwrap() {
+                KeyEvent::Left => self.draw.cursor.move_left(),
+                KeyEvent::Right => self.draw.cursor.move_right(),
+                KeyEvent::Up => self.draw.cursor.select_up(),
+                KeyEvent::Down => self.draw.cursor.select_down(),
+                KeyEvent::Home => self.draw.cursor = Selection::Deck,
+                KeyEvent::End => self.draw.cursor = Selection::Pile { index: 0 },
+                KeyEvent::Char(' ') => self.cards_action(game_state),
+                KeyEvent::Char('\n') => self.enter_key_action(game_state),
+                KeyEvent::Char('c') if self.draw.debug_mode => {
                     self.debug_unchecked_cards_action(game_state)
                 }
-                Key::Char('x') => self.draw.selected = None,
-                Key::Char('z') if self.draw.debug_mode => self.debug_check_valid(game_state),
-                Key::Char('d') => self.draw.debug_mode = !self.draw.debug_mode,
-                Key::Char('h') => self.run_help(game_state),
-                Key::Esc => {
+                KeyEvent::Char('x') => self.draw.selected = None,
+                KeyEvent::Char('z') if self.draw.debug_mode => self.debug_check_valid(game_state),
+                KeyEvent::Char('d') => self.draw.debug_mode = !self.draw.debug_mode,
+                KeyEvent::Char('h') => self.run_help(game_state),
+                KeyEvent::Esc => {
                     if self.run_game_menu(game_state) {
                         break;
                     }
                 }
-                Key::Ctrl('c') => {
+                KeyEvent::Ctrl('c') => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -204,18 +207,19 @@ impl Ui {
 
     fn run_start_screen(&mut self) {
         self.draw.display_start_screen();
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('1') => {
+        let mut keys = self.terminal_factory.create_keys();
+        
+        for key_result in keys.keys() {
+            match key_result.unwrap() {
+                KeyEvent::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     break;
                 }
-                Key::Char('3') => {
+                KeyEvent::Char('3') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawThree);
                     break;
                 }
-                Key::Esc | Key::Ctrl('c') => {
+                KeyEvent::Esc | KeyEvent::Ctrl('c') => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -227,26 +231,27 @@ impl Ui {
     /// Returns: true IFF UiState has changed
     fn run_game_menu(&mut self, game_state: &mut GameState) -> bool {
         self.draw.display_game_menu(game_state);
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('1') => {
+        let mut keys = self.terminal_factory.create_keys();
+        
+        for key_result in keys.keys() {
+            match key_result.unwrap() {
+                KeyEvent::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     return true;
                 }
-                Key::Char('3') => {
+                KeyEvent::Char('3') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawThree);
                     return true;
                 }
-                Key::Char('r') => {
+                KeyEvent::Char('r') => {
                     self.ui_state = UiState::RestartGame;
                     return true;
                 }
-                Key::Char('q') | Key::Ctrl('c') => {
+                KeyEvent::Char('q') | KeyEvent::Ctrl('c') => {
                     self.ui_state = UiState::Quit;
                     return true;
                 }
-                Key::Esc => {
+                KeyEvent::Esc => {
                     return false;
                 }
                 _ => {}
@@ -257,15 +262,19 @@ impl Ui {
 
     fn run_victory(&mut self, game_state: &mut GameState) {
         self.draw.display_victory(game_state);
-
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('y') => {
-                    self.ui_state = UiState::NewGame(game_state.game_mode);
+        let mut keys = self.terminal_factory.create_keys();
+        
+        for key_result in keys.keys() {
+            match key_result.unwrap() {
+                KeyEvent::Char('1') => {
+                    self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     break;
                 }
-                Key::Char('n') | Key::Esc | Key::Ctrl('c') => {
+                KeyEvent::Char('3') => {
+                    self.ui_state = UiState::NewGame(GameMode::DrawThree);
+                    break;
+                }
+                KeyEvent::Char('q') | KeyEvent::Esc | KeyEvent::Ctrl('c') => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -297,7 +306,7 @@ impl Ui {
 
     pub fn run_help(&mut self, game_state: &mut GameState) {
         self.draw.display_help(game_state);
-        stdin().keys().next();
+        self.terminal_factory.create_keys().keys().next();
     }
 
     pub fn run(&mut self, game_state: &mut GameState) {
@@ -315,8 +324,6 @@ impl Ui {
         }
 
         self.draw.restore_terminal();
-        self.draw
-            .draw_text(1, 1, "please send bug reports via IRC or ham radio");
         self.draw.draw_text(1, 1, "");
     }
 }
