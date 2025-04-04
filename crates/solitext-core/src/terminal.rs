@@ -1,36 +1,72 @@
-// Terminal module to encapsulate all termion functionality
+// Terminal module with platform-agnostic interfaces for terminal functionality
 
-// For keys and input handling
-pub use termion::event::Key;
-
-// For terminal mode
-pub use termion::raw::{IntoRawMode, RawTerminal};
-
-// For cursor and terminal control
-pub mod cursor {
-    pub use termion::cursor::{Goto, Hide, Show};
+// Platform-agnostic terminal key definitions
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Key {
+    Char(char),
+    Ctrl(char),
+    Alt(char),
+    Left,
+    Right,
+    Up,
+    Down,
+    Home,
+    End,
+    Backspace,
+    Delete,
+    Enter,
+    Tab,
+    Esc,
+    F(u8),
+    Null,
+    Invalid,
 }
 
-pub mod clear {
-    pub use termion::clear::All;
+// Color trait
+pub trait Color {
+    fn fg_code(&self) -> String;
+    fn bg_code(&self) -> String;
 }
 
-// For input handling
-pub use termion::input::Keys;
-pub use termion::input::TermRead;
+// Standard color definitions
+pub struct Black;
+pub struct Red;
+pub struct Green;
+pub struct Yellow;
+pub struct Blue;
+pub struct Magenta;
+pub struct Cyan;
+pub struct White;
+pub struct LightBlack;
+pub struct LightRed;
+pub struct LightGreen;
+pub struct LightYellow;
+pub struct LightBlue;
+pub struct LightMagenta;
+pub struct LightCyan;
+pub struct LightWhite;
+pub struct Reset;
 
-// Simple wrapper to make the code cleaner when refactoring
-pub fn stdin_keys() -> Keys<std::io::Stdin> {
-    std::io::stdin().keys()
-}
-
-// For colors
-pub mod color {
-    pub use termion::color::{
-        self, Bg, Black, Blue, Color, Fg, Green, LightBlack, LightBlue, LightGreen, LightRed,
-        LightWhite, Red, Reset, White, Yellow,
-    };
+// Terminal interface for cursor and screen operations
+pub trait Terminal {
+    type RawTerminal;
     
-    // Use Yellow for LightYellow for now
-    pub use Yellow as LightYellow;
+    // Raw mode handling
+    fn into_raw_mode(self) -> std::io::Result<Self::RawTerminal>;
+    
+    // Cursor operations
+    fn goto(x: u16, y: u16) -> String;
+    fn hide() -> String;
+    fn show() -> String;
+    
+    // Screen operations
+    fn clear_all() -> String;
+}
+
+// Terminal input handling
+pub trait TerminalInput {
+    type Keys;
+    
+    fn keys(self) -> Self::Keys;
+    fn read_key(keys: &mut Self::Keys) -> Option<std::io::Result<Key>>;
 } 
