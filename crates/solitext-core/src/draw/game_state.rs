@@ -11,7 +11,7 @@ where
     T: Terminal + Write,
     T::RawTerminal: Write,
 {
-    pub fn display_game_state<BG: Color, FG: Color, ACB: Color, ACC1: Color, ACC2: Color>(
+    pub fn display_game_state<BG: Color + Clone, FG: Color + Clone, ACB: Color + Clone, ACC1: Color + Clone, ACC2: Color + Clone>(
         &mut self,
         game_state: &GameState,
         fg: FG,
@@ -21,20 +21,20 @@ where
         accent_cursor2: ACC2,
     ) {
         self.clear_screen();
-        self.set_colors(fg, bg);
+        self.set_colors(fg.clone(), bg.clone());
 
-        self.display_info(fg, bg);
+        self.display_info(fg.clone(), bg.clone());
         self.display_deck(game_state);
         self.display_columns(game_state);
         self.display_piles(game_state);
 
-        self.set_colors(accent_bg, bg);
+        self.set_colors(accent_bg.clone(), bg.clone());
         self.display_collection_selection_cursor();
 
-        self.set_colors(fg, accent_cursor1);
+        self.set_colors(fg.clone(), accent_cursor1);
         self.display_card_selection_cursor(self.cursor, game_state);
 
-        self.set_colors(fg, accent_cursor2);
+        self.set_colors(fg.clone(), accent_cursor2);
         if let Some(selected) = self.selected {
             self.display_card_selection_cursor(selected, game_state);
         }

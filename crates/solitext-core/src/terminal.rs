@@ -53,54 +53,71 @@ pub trait Color {
 
 // Standard color definitions
 /// Black color
+#[derive(Clone, Copy)]
 pub struct Black;
 
 /// Red color
+#[derive(Clone, Copy)]
 pub struct Red;
 
 /// Green color
+#[derive(Clone, Copy)]
 pub struct Green;
 
 /// Yellow color
+#[derive(Clone, Copy)]
 pub struct Yellow;
 
 /// Blue color
+#[derive(Clone, Copy)]
 pub struct Blue;
 
 /// Magenta color
+#[derive(Clone, Copy)]
 pub struct Magenta;
 
 /// Cyan color
+#[derive(Clone, Copy)]
 pub struct Cyan;
 
 /// White color
+#[derive(Clone, Copy)]
 pub struct White;
 
 /// Light black (gray) color
+#[derive(Clone, Copy)]
 pub struct LightBlack;
 
 /// Light red color
+#[derive(Clone, Copy)]
 pub struct LightRed;
 
 /// Light green color
+#[derive(Clone, Copy)]
 pub struct LightGreen;
 
 /// Light yellow color
+#[derive(Clone, Copy)]
 pub struct LightYellow;
 
 /// Light blue color
+#[derive(Clone, Copy)]
 pub struct LightBlue;
 
 /// Light magenta color
+#[derive(Clone, Copy)]
 pub struct LightMagenta;
 
 /// Light cyan color
+#[derive(Clone, Copy)]
 pub struct LightCyan;
 
 /// Light white color
+#[derive(Clone, Copy)]
 pub struct LightWhite;
 
 /// Reset color to default
+#[derive(Clone, Copy)]
 pub struct Reset;
 
 /// Terminal interface for cursor and screen operations
