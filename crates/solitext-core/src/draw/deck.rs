@@ -2,7 +2,6 @@
 
 use super::Draw;
 use crate::game_state::{CardState, GameMode, GameState};
-use crate::terminal::color;
 
 impl Draw {
     pub(super) fn draw_deck_selection_cursor(&mut self, col: usize, row: usize) {

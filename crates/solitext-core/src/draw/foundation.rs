@@ -3,7 +3,6 @@
 use super::Draw;
 use crate::cards::Suit;
 use crate::game_state::{CardState, GameState};
-use crate::terminal::color;
 
 impl Draw {
     pub(super) fn draw_pile_selection_cursor(&mut self, col: usize, index: usize) {
