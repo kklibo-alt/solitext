@@ -1,31 +1,28 @@
 //! Common drawing code.
 
 use super::Draw;
-use crate::terminal::{clear, color, cursor};
+use crate::terminal::{Black, Color, LightBlack, LightBlue, LightWhite, Reset, Terminal, White};
 use std::io::Write;
 
-impl Draw {
-    pub(crate) fn clear_screen(&mut self) {
-        writeln!(self.stdout, "{}", clear::All,).unwrap();
+impl<W: Write> Draw<W> {
+    pub(crate) fn clear_screen<T: Terminal>(&mut self) {
+        writeln!(self.stdout, "{}", T::clear_all()).unwrap();
     }
 
-    pub(crate) fn default_bg() -> impl color::Color {
-        color::Black
+    pub(crate) fn default_bg() -> Black {
+        Black
     }
-    pub(crate) fn default_fg() -> impl color::Color {
-        color::LightWhite
+    
+    pub(crate) fn default_fg() -> LightWhite {
+        LightWhite
     }
 
-    pub(crate) fn set_colors(
-        &mut self,
-        foreground: impl color::Color,
-        background: impl color::Color,
-    ) {
+    pub(crate) fn set_colors<C1: Color, C2: Color>(&mut self, foreground: C1, background: C2) {
         writeln!(
             self.stdout,
             "{}{}",
-            color::Fg(foreground),
-            color::Bg(background),
+            foreground.fg_code(),
+            background.bg_code(),
         )
         .unwrap();
     }
@@ -34,41 +31,41 @@ impl Draw {
         use std::cmp::{max, min};
         for col in min(col1, col2)..=max(col1, col2) {
             for row in min(row1, row2)..=max(row1, row2) {
-                self.draw_text(col, row, "█");
+                self.draw_text::<Stdout>(col, row, "█");
             }
         }
     }
 
-    pub fn draw_text(&mut self, col: usize, row: usize, text: &str) {
+    pub fn draw_text<T: Terminal>(&mut self, col: usize, row: usize, text: &str) {
         let col = u16::try_from(col).expect("column should fit in a u16");
         let row = u16::try_from(row).expect("row should fit in a u16");
 
-        writeln!(self.stdout, "{}{}", cursor::Goto(col, row), text).unwrap();
+        writeln!(self.stdout, "{}{}", T::goto(col, row), text).unwrap();
     }
 
-    pub fn set_up_terminal(&mut self) {
+    pub fn set_up_terminal<T: Terminal>(&mut self) {
         writeln!(
             self.stdout,
             "{}{}{}{}{}",
-            color::Fg(Self::default_fg()),
-            color::Bg(Self::default_bg()),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Hide,
+            Self::default_fg().fg_code(),
+            Self::default_bg().bg_code(),
+            T::clear_all(),
+            T::goto(1, 1),
+            T::hide(),
         )
         .unwrap();
         self.stdout.flush().unwrap();
     }
 
-    pub fn restore_terminal(&mut self) {
+    pub fn restore_terminal<T: Terminal>(&mut self) {
         writeln!(
             self.stdout,
             "{}{}{}{}{}",
-            color::Fg(color::Reset),
-            color::Bg(color::Reset),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Show,
+            Reset.fg_code(),
+            Reset.bg_code(),
+            T::clear_all(),
+            T::goto(1, 1),
+            T::show(),
         )
         .unwrap();
         self.stdout.flush().unwrap();
@@ -93,16 +90,16 @@ impl Draw {
         let height = lines.split('\n').count();
 
         const WIDTH: usize = 38;
-        self.set_colors(color::LightBlue, Self::default_bg());
+        self.set_colors(LightBlue, Self::default_bg());
         self.draw_centered_box(WIDTH, height + 2);
-        self.set_colors(color::White, Self::default_bg());
+        self.set_colors(White, Self::default_bg());
         self.draw_centered_box(WIDTH - 2, height);
 
-        self.set_colors(color::LightBlack, color::White);
+        self.set_colors(LightBlack, White);
         let (col, mut row, _, _) = Self::centered_box_corners(WIDTH - 2, height);
 
         for line in lines.split('\n') {
-            self.draw_text(col, row, line);
+            self.draw_text::<Stdout>(col, row, line);
             row += 1;
         }
     }
