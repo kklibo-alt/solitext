@@ -392,6 +392,19 @@ where
         self.draw.draw_text(1, 1, "please send bug reports via IRC or ham radio");
         self.draw.draw_text(1, 2, "");
     }
+
+    // Test-only methods
+    #[cfg(test)]
+    pub fn get_ui_state_for_test(&self) -> String {
+        match self.ui_state {
+            UiState::StartScreen => "StartScreen".to_string(),
+            UiState::NewGame(_) => "NewGame".to_string(),
+            UiState::RestartGame => "RestartGame".to_string(),
+            UiState::Game => "Game".to_string(),
+            UiState::Victory => "Victory".to_string(),
+            UiState::Quit => "Quit".to_string(),
+        }
+    }
 }
 
 #[cfg(test)]
