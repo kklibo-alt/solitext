@@ -3,7 +3,7 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use crate::terminal::{Key, Terminal, TerminalInput, Black, Blue, LightGreen, LightWhite, LightYellow, Reset};
+use crate::terminal::{Black, Blue, Color, Key, LightGreen, LightWhite, LightYellow, Reset, Terminal, TerminalInput};
 use std::io::Write;
 use std::marker::PhantomData;
 
@@ -460,11 +460,13 @@ mod tests {
     
     #[test]
     fn test_ui_with_mock() {
-        // Create a UI with mock implementations
         let mut ui = Ui::<MockStdout, MockInput>::new();
-        let mut game_state = GameState::init(Card::ordered_deck());
+        let mut game_state = GameState::new_with_seed(0, GameMode::DrawOne);
         
-        // Just make sure we can create one without errors
-        assert!(ui.game_deck.is_none());
+        // Just make sure we can create and run the UI with mocks
+        ui.reset_for_new_game();
+        ui.turn_actions(&mut game_state);
+        
+        assert_eq!(ui.draw.cursor, Selection::Deck);
     }
 }

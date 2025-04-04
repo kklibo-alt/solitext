@@ -149,6 +149,12 @@ impl MockInput {
     }
 }
 
+impl Default for MockInput {
+    fn default() -> Self {
+        Self::with_default_sequence()
+    }
+}
+
 impl TerminalInput for MockInput {
     type Keys = Self;
     
