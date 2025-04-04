@@ -3,9 +3,8 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
+use crate::terminal::{Key, TermReader};
 use std::io::stdin;
-use termion::event::Key;
-use termion::input::TermRead;
 
 pub struct Ui {
     /// The deck used to seed the current game (if any)
