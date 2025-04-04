@@ -7,8 +7,8 @@ mod game_state;
 mod info;
 
 use crate::selection::Selection;
+use crate::terminal::{IntoRawMode, RawTerminal};
 use std::io::{Stdout, stdout};
-use termion::raw::{IntoRawMode, RawTerminal};
 
 pub struct Draw {
     stdout: RawTerminal<Stdout>,
