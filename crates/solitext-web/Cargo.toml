@@ -9,3 +9,4 @@ path = "src/main.rs"
 
 [dependencies]
 ratzilla = "0.0.5"
+solitext-core = { path = "../solitext-core" }
