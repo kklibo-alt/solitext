@@ -111,11 +111,8 @@ pub struct TermionKeys;
 impl TerminalKeys for TermionKeys {
     fn next_key(&mut self) -> io::Result<Option<KeyEvent>> {
         // Create a fresh stdin for each call
-        match stdin().events().next() {
-            Some(Ok(event)) => match event {
-                termion::event::Event::Key(key) => Ok(Some(convert_termion_key(key))),
-                _ => Ok(None),
-            },
+        match stdin().keys().next() {
+            Some(Ok(key)) => Ok(Some(convert_termion_key(key))),
             Some(Err(e)) => Err(e),
             None => Ok(None),
         }
