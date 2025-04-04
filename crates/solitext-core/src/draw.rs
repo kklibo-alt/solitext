@@ -7,11 +7,12 @@ mod game_state;
 mod info;
 
 use crate::selection::Selection;
-use crate::terminal::{IntoRawMode, RawTerminal};
-use std::io::{Stdout, stdout};
+use std::io::{stdout, Write};
+use crate::terminal::Terminal;
 
-pub struct Draw {
-    stdout: RawTerminal<Stdout>,
+// Generic Draw struct that can work with any terminal implementation
+pub struct Draw<T: Terminal> {
+    pub stdout: T::RawTerminal,
     pub cursor: Selection,
     pub selected: Option<Selection>,
     pub context_help_message: String,
@@ -19,16 +20,10 @@ pub struct Draw {
     pub debug_mode: bool,
 }
 
-impl Default for Draw {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Draw {
-    pub fn new() -> Self {
+impl<T: Terminal> Draw<T> {
+    pub fn new(terminal: T) -> Self {
         Self {
-            stdout: stdout().into_raw_mode().unwrap(),
+            stdout: terminal.into_raw_mode().expect("Failed to enter raw mode"),
             cursor: Selection::Deck,
             selected: None,
             context_help_message: "".to_string(),

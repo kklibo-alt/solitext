@@ -3,15 +3,14 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use crate::terminal::Key;
-use crate::terminal::TermRead;
+use crate::terminal::{Key, Terminal, TerminalInput};
 use std::io::stdin;
 
-pub struct Ui {
+pub struct Ui<T: Terminal> {
     /// The deck used to seed the current game (if any)
     game_deck: Option<Vec<Card>>,
     ui_state: UiState,
-    draw: Draw,
+    draw: Draw<T>,
 }
 
 enum UiState {
@@ -23,18 +22,18 @@ enum UiState {
     Quit,
 }
 
-impl Default for Ui {
+impl<T: Terminal + Default> Default for Ui<T> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl Ui {
+impl<T: Terminal + Default> Ui<T> {
     pub fn new() -> Self {
         Self {
             game_deck: None,
             ui_state: UiState::StartScreen,
-            draw: Draw::new(),
+            draw: Draw::new(T::default()),
         }
     }
     pub fn reset_for_new_game(&mut self) {
@@ -162,13 +161,15 @@ impl Ui {
         false
     }
 
-    fn run_game(&mut self, game_state: &mut GameState) {
+    fn run_game<I: TerminalInput>(&mut self, game_state: &mut GameState, input: I) {
         if self.turn_actions(game_state) {
             return;
         }
 
-        for c in stdin().keys() {
-            match c.unwrap() {
+        let mut keys = input.keys();
+        while let Some(result) = I::read_key(&mut keys) {
+            let key = result.unwrap();
+            match key {
                 Key::Left => self.draw.cursor.move_left(),
                 Key::Right => self.draw.cursor.move_right(),
                 Key::Up => self.draw.cursor.select_up(),
@@ -307,7 +308,7 @@ impl Ui {
                 UiState::StartScreen => self.run_start_screen(),
                 UiState::NewGame(game_mode) => self.run_new_game(game_state, game_mode),
                 UiState::RestartGame => self.run_restart_game(game_state),
-                UiState::Game => self.run_game(game_state),
+                UiState::Game => self.run_game(game_state, T::default()),
                 UiState::Victory => self.run_victory(game_state),
                 UiState::Quit => break,
             }
