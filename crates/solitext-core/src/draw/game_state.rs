@@ -23,7 +23,7 @@ where
         self.clear_screen();
         self.set_colors(fg, bg);
 
-        self.display_info();
+        self.display_info(fg, bg);
         self.display_deck(game_state);
         self.display_columns(game_state);
         self.display_piles(game_state);
