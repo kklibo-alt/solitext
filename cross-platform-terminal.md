@@ -1,122 +1,244 @@
 # Refactoring terminal.rs for Cross-Platform Support
 
-This guide outlines the steps to refactor the terminal.rs module to support both termion (for native/local builds) and ratzilla (for web builds).
+This guide outlines the steps to refactor the terminal.rs module to support both termion (for native/local builds) and ratzilla (for web builds) without using feature flags.
 
 ## Steps
 
 1. Create a trait-based abstraction layer in solitext-core:
-   - Rename the existing `terminal.rs` to `terminal/mod.rs`
+   - Convert the existing `terminal.rs` into a pure trait definition module
+   - Remove all termion-specific implementation details
    - Define platform-agnostic traits for terminal functionality
 
-2. Create feature flags in solitext-core's Cargo.toml:
-   ```toml
-   [features]
-   default = []
-   ```
-
-3. Extract the common interface in terminal/mod.rs:
+2. Define the common interface in solitext-core/src/terminal.rs:
    ```rust
-   // Platform-agnostic traits
-   pub trait TerminalKey {
-       // Key event types and constants
+   // Platform-agnostic terminal key definitions
+   pub enum Key {
+       Char(char),
+       Ctrl(char),
+       Alt(char),
+       Left,
+       Right,
+       Up,
+       Down,
+       Home,
+       End,
+       Backspace,
+       Delete,
+       Enter,
+       Tab,
+       Esc,
+       // ... other keys as needed
    }
 
-   pub trait TerminalColor {
-       // Color handling
+   // Color trait
+   pub trait Color {
+       fn as_fg_str(&self) -> String;
+       fn as_bg_str(&self) -> String;
    }
 
-   pub trait TerminalCursor {
-       // Cursor positioning
+   // Standard colors
+   pub struct Black;
+   pub struct Red;
+   pub struct Green;
+   pub struct Yellow;
+   pub struct Blue;
+   pub struct Magenta;
+   pub struct Cyan;
+   pub struct White;
+   pub struct LightBlack;
+   pub struct LightRed;
+   pub struct LightGreen;
+   pub struct LightYellow;
+   pub struct LightBlue;
+   pub struct LightMagenta;
+   pub struct LightCyan;
+   pub struct LightWhite;
+   pub struct Reset;
+
+   // Terminal interface
+   pub trait Terminal {
+       // Raw mode handling
+       type RawTerminal;
+       fn into_raw_mode(self) -> Self::RawTerminal;
+       
+       // Cursor operations
+       fn goto(x: u16, y: u16) -> String;
+       fn hide() -> String;
+       fn show() -> String;
+       
+       // Screen operations
+       fn clear_all() -> String;
    }
 
+   // Input handling
    pub trait TerminalInput {
-       // Input handling
+       type Keys;
+       fn keys(self) -> Self::Keys;
+       fn next_key(keys: &mut Self::Keys) -> Option<Result<Key, std::io::Error>>;
    }
-
-   pub trait TerminalRaw {
-       // Raw terminal mode
-   }
-
-   // Re-export concrete implementations based on current platform
-   // (These will come from submodules)
    ```
 
-4. Create terminal/termion.rs to implement the traits using termion:
+3. Move the termion implementation to solitext-local:
+   - Create `solitext-local/src/terminal_impl.rs` to implement the traits using termion
+   - This implementation translates between termion's types and the core traits
+
    ```rust
-   use super::*;
+   use solitext_core::terminal::{Key, Color, Terminal, TerminalInput};
+   use std::io::{stdin, stdout, Stdout, Write};
    use termion;
    
-   // Implement all terminal traits using termion
+   // Map termion Keys to our Key enum
+   pub fn map_termion_key(key: termion::event::Key) -> Key {
+       match key {
+           termion::event::Key::Char(c) => Key::Char(c),
+           termion::event::Key::Ctrl(c) => Key::Ctrl(c),
+           // ... other mappings
+       }
+   }
+   
+   // Implement Color for each color type
+   impl Color for solitext_core::terminal::Black {
+       fn as_fg_str(&self) -> String {
+           format!("{}", termion::color::Fg(termion::color::Black))
+       }
+       fn as_bg_str(&self) -> String {
+           format!("{}", termion::color::Bg(termion::color::Black))
+       }
+   }
+   
+   // ... implement for other colors
+   
+   // Implement Terminal for Stdout
+   impl Terminal for Stdout {
+       type RawTerminal = termion::raw::RawTerminal<Stdout>;
+       
+       fn into_raw_mode(self) -> Self::RawTerminal {
+           termion::raw::IntoRawMode::into_raw_mode(self).unwrap()
+       }
+       
+       fn goto(x: u16, y: u16) -> String {
+           format!("{}", termion::cursor::Goto(x, y))
+       }
+       
+       fn hide() -> String {
+           format!("{}", termion::cursor::Hide)
+       }
+       
+       fn show() -> String {
+           format!("{}", termion::cursor::Show)
+       }
+       
+       fn clear_all() -> String {
+           format!("{}", termion::clear::All)
+       }
+   }
+   
+   // Implement TerminalInput
+   impl TerminalInput for std::io::Stdin {
+       type Keys = termion::input::Keys<std::io::Stdin>;
+       
+       fn keys(self) -> Self::Keys {
+           termion::input::TermRead::keys(self)
+       }
+       
+       fn next_key(keys: &mut Self::Keys) -> Option<Result<Key, std::io::Error>> {
+           keys.next().map(|res| res.map(map_termion_key))
+       }
+   }
    ```
 
-5. Create terminal/ratzilla.rs to implement the traits using ratzilla:
+4. Create the ratzilla implementation in solitext-web:
+   - Create `solitext-web/src/terminal_impl.rs` to implement the traits using ratzilla
+   - This implementation translates between ratzilla's types and the core traits
+
    ```rust
-   use super::*;
+   use solitext_core::terminal::{Key, Color, Terminal, TerminalInput};
    use ratzilla;
    
-   // Implement all terminal traits using ratzilla
+   // Similar implementations but using ratzilla instead of termion
+   // ...
    ```
 
-6. Update solitext-core/Cargo.toml with conditional dependencies:
-   ```toml
-   [dependencies]
-   termion = { workspace = true, optional = true }
-   ratzilla = { version = "0.1.0", optional = true }
-
-   [features]
-   default = ["termion"]
-   termion-backend = ["termion"]
-   ratzilla-backend = ["ratzilla"]
-   ```
-
-7. In terminal/mod.rs, use conditional compilation to re-export the appropriate implementation:
+5. Update the draw module in solitext-core to use the trait-based API:
    ```rust
-   #[cfg(feature = "termion-backend")]
-   mod termion_impl;
-   #[cfg(feature = "termion-backend")]
-   pub use termion_impl::*;
-
-   #[cfg(feature = "ratzilla-backend")]
-   mod ratzilla_impl;
-   #[cfg(feature = "ratzilla-backend")]
-   pub use ratzilla_impl::*;
+   // In draw.rs
+   use crate::terminal::{Terminal, Color};
+   use std::io::{Stdout, stdout, Write};
+   
+   pub struct Draw<T: Terminal + Write> {
+       stdout: T::RawTerminal,
+       // ... other fields
+   }
+   
+   impl<T: Terminal + Write> Draw<T> {
+       pub fn new() -> Self {
+           Self {
+               stdout: stdout().into_raw_mode(),
+               // ... other initializations
+           }
+       }
+       
+       // ... implement methods using the trait API
+   }
    ```
 
-8. Update solitext-local/Cargo.toml to use the termion backend:
-   ```toml
-   [dependencies]
-   solitext-core = { path = "../solitext-core", features = ["termion-backend"] }
+6. Wire up the implementations in the executables:
+   - In solitext-local/src/main.rs:
+   ```rust
+   mod terminal_impl;
+   
+   use solitext_core::draw::Draw;
+   use solitext_core::tui::Ui;
+   use std::io::stdout;
+   
+   fn main() {
+       // Initialize with termion implementation
+       let ui = Ui::new();
+       ui.run();
+   }
    ```
 
-9. Update solitext-web/Cargo.toml to use the ratzilla backend:
-   ```toml
-   [dependencies]
-   solitext-core = { path = "../solitext-core", features = ["ratzilla-backend"] }
-   ratzilla = "0.1.0"
+   - In solitext-web/src/main.rs:
+   ```rust
+   mod terminal_impl;
+   
+   use solitext_core::draw::Draw;
+   use solitext_core::tui::Ui;
+   use ratzilla;
+   
+   fn main() {
+       // Initialize with ratzilla implementation
+       let ui = Ui::new();
+       ui.run();
+   }
    ```
 
-10. Update the main workspace Cargo.toml to make termion optional:
-    ```toml
-    [workspace.dependencies]
-    termion = { version = "4.0.5", optional = true }
-    ```
+7. Update the main tui module to be generic:
+   ```rust
+   pub struct Ui<T: Terminal + TerminalInput + Write> {
+       draw: Draw<T>,
+       // ... other fields
+   }
 
-11. Refactor the Draw implementation to use the trait-based API:
-    - Update all modules that interact with terminal.rs to use the trait-based API
-    - Fix any compiler errors that arise from the changes
+   impl<T: Terminal + TerminalInput + Write> Ui<T> {
+       pub fn new() -> Self {
+           Self {
+               draw: Draw::new(),
+               // ... other initializations
+           }
+       }
+       
+       // ... other methods using the traits
+   }
+   ```
 
-12. Create stub/mock implementations for unit tests:
-    - Add a terminal/mock.rs implementation for testing
-    - Update tests to use the mock implementation
+8. Create stub/mock implementations for unit tests:
+   - Add a terminal_mock.rs implementation for testing
 
-13. Implement platform-specific input handling:
-    - For termion: use stdin().keys()
-    - For ratzilla: use event listeners and state management
+9. Test the application on both platforms:
+   - Verify solitext-local works correctly with the termion implementation
+   - Verify solitext-web works correctly with the ratzilla implementation
 
-14. Test the application on both platforms:
-    - Verify solitext-local works correctly with the termion backend
-    - Verify solitext-web works correctly with the ratzilla backend
-
-15. Document the platform abstraction:
-    - Add README.md to the terminal module explaining the design
+10. Document the platform abstraction:
+    - Add comments to the terminal.rs file explaining the design
     - Document how to add support for additional backends in the future 
