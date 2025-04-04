@@ -1,4 +1,4 @@
-use crate::terminal::{KeyEvent, Terminal, TerminalColor, TerminalFactory, TerminalKeys};
+use solitext_core::terminal::{KeyEvent, Terminal, TerminalColor, TerminalFactory, TerminalKeys};
 use std::io::{self, stdin, stdout, Stdin, Stdout, Write};
 use termion::color;
 use termion::cursor;
