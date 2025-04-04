@@ -3,7 +3,7 @@
 use super::Draw;
 use crate::cards::Suit;
 use crate::game_state::{CardState, GameState};
-use termion::color;
+use crate::terminal::color;
 
 impl Draw {
     pub(super) fn draw_pile_selection_cursor(&mut self, col: usize, index: usize) {
@@ -16,7 +16,7 @@ impl Draw {
     const PILES_INIT_ROW: usize = 2;
     const PILES_ROW_STEP: usize = 2;
     pub(super) fn display_piles(&mut self, game_state: &GameState) {
-        use color::*;
+        use crate::terminal::color::*;
         let (init_col, init_row) = (Self::PILES_INIT_COL, Self::PILES_INIT_ROW);
         let mut row = init_row;
         for (index, pile) in game_state.card_piles.iter().enumerate() {

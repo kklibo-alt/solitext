@@ -1,8 +1,8 @@
 //! Common drawing code.
 
 use super::Draw;
+use crate::terminal::{clear, color, cursor};
 use std::io::Write;
-use termion::{clear, color, cursor};
 
 impl Draw {
     pub(crate) fn clear_screen(&mut self) {

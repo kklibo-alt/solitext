@@ -3,7 +3,8 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use crate::terminal::{Key, TermReader};
+use crate::terminal::Key;
+use crate::terminal::TermRead;
 use std::io::stdin;
 
 pub struct Ui {
@@ -166,8 +167,7 @@ impl Ui {
             return;
         }
 
-        let stdin = stdin();
-        for c in stdin.keys() {
+        for c in stdin().keys() {
             match c.unwrap() {
                 Key::Left => self.draw.cursor.move_left(),
                 Key::Right => self.draw.cursor.move_right(),

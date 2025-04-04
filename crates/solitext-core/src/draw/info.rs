@@ -2,13 +2,13 @@
 
 use super::Draw;
 use crate::game_state::GameState;
+use crate::terminal::color;
 use std::io::Write;
 use std::{thread, time};
-use termion::color;
 
 impl Draw {
     pub(super) fn display_info(&mut self) {
-        use color::*;
+        use crate::terminal::color::*;
 
         self.set_colors(LightYellow, Self::default_bg());
         self.draw_text(1, 1, "Solitext");

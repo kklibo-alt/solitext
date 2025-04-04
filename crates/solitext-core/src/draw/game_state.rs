@@ -3,7 +3,7 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::selection::Selection;
-use termion::color;
+use crate::terminal::color;
 
 impl Draw {
     pub fn display_game_state(&mut self, game_state: &GameState) {

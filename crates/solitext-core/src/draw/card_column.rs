@@ -4,8 +4,8 @@ use super::Draw;
 use crate::cards::Card;
 use crate::game_state::{CardState, GameState};
 use crate::selection::Selection;
+use crate::terminal::color::*;
 use std::cmp::min;
-use termion::color::*;
 
 enum CardColumnScroll {
     AtMaxRow,

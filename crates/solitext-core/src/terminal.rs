@@ -16,23 +16,21 @@ pub mod clear {
 }
 
 // For input handling
-pub trait TermReader {
-    fn keys(&self) -> termion::input::Keys<std::io::Stdin>;
-}
-
-impl TermReader for std::io::Stdin {
-    fn keys(&self) -> termion::input::Keys<std::io::Stdin> {
-        termion::input::TermRead::keys(self)
-    }
-}
-
-// Re-export TermRead for additional methods if needed
+pub use termion::input::Keys;
 pub use termion::input::TermRead;
+
+// Simple wrapper to make the code cleaner when refactoring
+pub fn stdin_keys() -> Keys<std::io::Stdin> {
+    std::io::stdin().keys()
+}
 
 // For colors
 pub mod color {
     pub use termion::color::{
         self, Bg, Black, Blue, Color, Fg, Green, LightBlack, LightBlue, LightGreen, LightRed,
-        LightWhite, Red, Reset, White,
+        LightWhite, Red, Reset, White, Yellow,
     };
+    
+    // Use Yellow for LightYellow for now
+    pub use Yellow as LightYellow;
 } 
