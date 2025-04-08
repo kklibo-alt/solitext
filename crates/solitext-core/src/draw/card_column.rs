@@ -32,11 +32,11 @@ impl Draw {
             }) = Self::scrolled_column(&column.0, self.selection_count(index))
             {
                 if !matches!(at_edge, Some(CardColumnScroll::AtMaxRow)) {
-                    self.set_colors2(White, Green);
+                    self.terminal.set_colors2(White, Green);
                     self.draw_text(col - 1, row, "↑  ↑");
                 }
                 if !matches!(at_edge, Some(CardColumnScroll::AtMinRow)) {
-                    self.set_colors2(White, Green);
+                    self.terminal.set_colors2(White, Green);
                     self.draw_text(
                         col - 1,
                         row - 1 + (visible_cards.len() * Self::COLUMNS_ROW_STEP),
