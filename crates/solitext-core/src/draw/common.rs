@@ -1,6 +1,7 @@
 //! Common drawing code.
 
 use super::Draw;
+use crate::terminal;
 use crate::terminal::Terminal;
 use std::io::Write;
 use termion::{clear, color, cursor};
@@ -17,18 +18,11 @@ impl<T: Terminal> Draw<T> {
         color::LightWhite
     }
 
-    pub(crate) fn set_colors(
-        &mut self,
-        foreground: impl color::Color,
-        background: impl color::Color,
-    ) {
-        writeln!(
-            self.stdout,
-            "{}{}",
-            color::Fg(foreground),
-            color::Bg(background),
-        )
-        .unwrap();
+    pub(crate) fn default_bg2() -> terminal::Color {
+        terminal::Color::Black
+    }
+    pub(crate) fn default_fg2() -> terminal::Color {
+        terminal::Color::LightWhite
     }
 
     pub(crate) fn draw_box(&mut self, col1: usize, row1: usize, col2: usize, row2: usize) {
@@ -94,12 +88,12 @@ impl<T: Terminal> Draw<T> {
         let height = lines.split('\n').count();
 
         const WIDTH: usize = 38;
-        self.set_colors(color::LightBlue, Self::default_bg());
+        self.set_colors(terminal::Color::LightBlue, Self::default_bg2());
         self.draw_centered_box(WIDTH, height + 2);
-        self.set_colors(color::White, Self::default_bg());
+        self.set_colors(terminal::Color::White, Self::default_bg2());
         self.draw_centered_box(WIDTH - 2, height);
 
-        self.set_colors(color::LightBlack, color::White);
+        self.set_colors(terminal::Color::LightBlack, terminal::Color::White);
         let (col, mut row, _, _) = Self::centered_box_corners(WIDTH - 2, height);
 
         for line in lines.split('\n') {

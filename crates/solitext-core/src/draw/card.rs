@@ -3,8 +3,7 @@
 use super::Draw;
 use crate::cards::Card;
 use crate::game_state::CardState;
-use crate::terminal::Terminal;
-use termion::color::*;
+use crate::terminal::{Color::*, Terminal};
 
 impl<T: Terminal> Draw<T> {
     pub(crate) fn display_card(

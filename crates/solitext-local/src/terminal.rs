@@ -23,7 +23,15 @@ impl TermionTerminal {
         match color {
             Color::Red => Box::new(color::Red),
             Color::Green => Box::new(color::Green),
+            Color::Blue => Box::new(color::Blue),
             Color::White => Box::new(color::White),
+            Color::Black => Box::new(color::Black),
+            Color::LightRed => Box::new(color::LightRed),
+            Color::LightYellow => Box::new(color::LightYellow),
+            Color::LightGreen => Box::new(color::LightGreen),
+            Color::LightBlue => Box::new(color::LightBlue),
+            Color::LightWhite => Box::new(color::LightWhite),
+            Color::LightBlack => Box::new(color::LightBlack),
         }
     }
 }

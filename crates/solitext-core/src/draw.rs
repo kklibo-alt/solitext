@@ -6,7 +6,7 @@ mod foundation;
 mod game_state;
 mod info;
 
-use crate::{selection::Selection, terminal::Terminal};
+use crate::{selection::Selection, terminal::Color, terminal::Terminal};
 use std::io::{Stdout, stdout};
 use termion::raw::{IntoRawMode, RawTerminal};
 
@@ -31,5 +31,9 @@ impl<T: Terminal> Draw<T> {
             debug_message: "".to_string(),
             debug_mode: false,
         }
+    }
+
+    pub fn set_colors(&mut self, foreground: Color, background: Color) {
+        self.terminal.set_colors2(foreground, background);
     }
 }

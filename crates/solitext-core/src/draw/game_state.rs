@@ -3,31 +3,30 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::selection::Selection;
-use crate::terminal::Terminal;
-use termion::color;
+use crate::terminal::{Color::*, Terminal};
 
 impl<T: Terminal> Draw<T> {
     pub fn display_game_state(&mut self, game_state: &GameState) {
         self.clear_screen();
-        self.set_colors(Self::default_fg(), Self::default_bg());
+        self.set_colors(Self::default_fg2(), Self::default_bg2());
 
         self.display_info();
         self.display_deck(game_state);
         self.display_columns(game_state);
         self.display_piles(game_state);
 
-        self.set_colors(color::Blue, Self::default_bg());
+        self.set_colors(Blue, Self::default_bg2());
         self.display_collection_selection_cursor();
 
-        self.set_colors(Self::default_fg(), color::LightGreen);
+        self.set_colors(Self::default_fg2(), LightGreen);
         self.display_card_selection_cursor(self.cursor, game_state);
 
-        self.set_colors(Self::default_fg(), color::LightYellow);
+        self.set_colors(Self::default_fg2(), LightYellow);
         if let Some(selected) = self.selected {
             self.display_card_selection_cursor(selected, game_state);
         }
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
+        self.set_colors(Self::default_fg2(), Self::default_bg2());
     }
 
     fn selection_col(selection: Selection) -> usize {
