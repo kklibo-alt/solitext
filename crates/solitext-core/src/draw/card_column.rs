@@ -4,8 +4,8 @@ use super::Draw;
 use crate::cards::Card;
 use crate::game_state::{CardState, GameState};
 use crate::selection::Selection;
+use crate::terminal::{Color::*, Terminal};
 use std::cmp::min;
-use termion::color::*;
 
 enum CardColumnScroll {
     AtMaxRow,
@@ -32,11 +32,11 @@ impl Draw {
             }) = Self::scrolled_column(&column.0, self.selection_count(index))
             {
                 if !matches!(at_edge, Some(CardColumnScroll::AtMaxRow)) {
-                    self.set_colors(White, Green);
+                    self.set_colors2(White, Green);
                     self.draw_text(col - 1, row, "↑  ↑");
                 }
                 if !matches!(at_edge, Some(CardColumnScroll::AtMinRow)) {
-                    self.set_colors(White, Green);
+                    self.set_colors2(White, Green);
                     self.draw_text(
                         col - 1,
                         row - 1 + (visible_cards.len() * Self::COLUMNS_ROW_STEP),

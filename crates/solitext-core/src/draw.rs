@@ -11,7 +11,7 @@ use std::io::{Stdout, stdout};
 use termion::raw::{IntoRawMode, RawTerminal};
 
 pub struct Draw {
-    stdout: RawTerminal<Stdout>,
+    pub stdout: RawTerminal<Stdout>,
     pub cursor: Selection,
     pub selected: Option<Selection>,
     pub context_help_message: String,
