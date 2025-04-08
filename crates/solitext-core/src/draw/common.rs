@@ -4,20 +4,12 @@ use super::Draw;
 use crate::terminal;
 use crate::terminal::Terminal;
 use std::io::Write;
-use termion::{clear, color, cursor};
+use termion::clear;
 
 impl<T: Terminal> Draw<T> {
     pub(crate) fn clear_screen(&mut self) {
         writeln!(self.stdout, "{}", clear::All,).unwrap();
     }
-
-    pub(crate) fn default_bg() -> impl color::Color {
-        color::Black
-    }
-    pub(crate) fn default_fg() -> impl color::Color {
-        color::LightWhite
-    }
-
     pub(crate) fn default_bg2() -> terminal::Color {
         terminal::Color::Black
     }
@@ -32,41 +24,6 @@ impl<T: Terminal> Draw<T> {
                 self.draw_text(col, row, "█");
             }
         }
-    }
-
-    pub fn draw_text(&mut self, col: usize, row: usize, text: &str) {
-        let col = u16::try_from(col).expect("column should fit in a u16");
-        let row = u16::try_from(row).expect("row should fit in a u16");
-
-        writeln!(self.stdout, "{}{}", cursor::Goto(col, row), text).unwrap();
-    }
-
-    pub fn set_up_terminal(&mut self) {
-        writeln!(
-            self.stdout,
-            "{}{}{}{}{}",
-            color::Fg(Self::default_fg()),
-            color::Bg(Self::default_bg()),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Hide,
-        )
-        .unwrap();
-        self.stdout.flush().unwrap();
-    }
-
-    pub fn restore_terminal(&mut self) {
-        writeln!(
-            self.stdout,
-            "{}{}{}{}{}",
-            color::Fg(color::Reset),
-            color::Bg(color::Reset),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Show,
-        )
-        .unwrap();
-        self.stdout.flush().unwrap();
     }
 
     fn centered_box_corners(width: usize, height: usize) -> (usize, usize, usize, usize) {

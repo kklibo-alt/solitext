@@ -14,4 +14,9 @@ pub enum Color {
 
 pub trait Terminal {
     fn set_colors2(&mut self, foreground: Color, background: Color);
+    fn default_bg() -> Color;
+    fn default_fg() -> Color;
+    fn draw_text(&mut self, col: usize, row: usize, text: &str);
+    fn set_up_terminal(&mut self);
+    fn restore_terminal(&mut self);
 }

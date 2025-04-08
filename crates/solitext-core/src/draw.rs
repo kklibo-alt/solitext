@@ -36,4 +36,16 @@ impl<T: Terminal> Draw<T> {
     pub fn set_colors(&mut self, foreground: Color, background: Color) {
         self.terminal.set_colors2(foreground, background);
     }
+
+    pub fn draw_text(&mut self, col: usize, row: usize, text: &str) {
+        self.terminal.draw_text(col, row, text);
+    }
+
+    pub fn set_up_terminal(&mut self) {
+        self.terminal.set_up_terminal();
+    }
+
+    pub fn restore_terminal(&mut self) {
+        self.terminal.restore_terminal();
+    }
 }
