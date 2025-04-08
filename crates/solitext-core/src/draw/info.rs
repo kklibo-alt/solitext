@@ -2,11 +2,12 @@
 
 use super::Draw;
 use crate::game_state::GameState;
+use crate::terminal::Terminal;
 use std::io::Write;
 use std::{thread, time};
 use termion::color;
 
-impl Draw {
+impl<T: Terminal> Draw<T> {
     pub(super) fn display_info(&mut self) {
         use color::*;
 
@@ -29,7 +30,7 @@ impl Draw {
     fn display_victory_message(&mut self) {
         const CENTER: (usize, usize) = (26, 5);
         const WIDTH_VAL: usize = 3;
-        fn draw_box(s: &mut Draw, size: usize) {
+        fn draw_box<T: Terminal>(s: &mut Draw<T>, size: usize) {
             s.draw_box(
                 CENTER.0 - WIDTH_VAL - size,
                 CENTER.1 - size,

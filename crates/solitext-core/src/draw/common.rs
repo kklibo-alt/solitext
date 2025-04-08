@@ -1,10 +1,11 @@
 //! Common drawing code.
 
 use super::Draw;
+use crate::terminal::Terminal;
 use std::io::Write;
 use termion::{clear, color, cursor};
 
-impl Draw {
+impl<T: Terminal> Draw<T> {
     pub(crate) fn clear_screen(&mut self) {
         writeln!(self.stdout, "{}", clear::All,).unwrap();
     }

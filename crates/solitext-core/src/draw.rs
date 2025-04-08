@@ -6,13 +6,13 @@ mod foundation;
 mod game_state;
 mod info;
 
-use crate::{selection::Selection, terminal::TermionTerminal};
+use crate::{selection::Selection, terminal::Terminal};
 use std::io::{Stdout, stdout};
 use termion::raw::{IntoRawMode, RawTerminal};
 
-pub struct Draw {
+pub struct Draw<T: Terminal> {
     pub stdout: RawTerminal<Stdout>,
-    pub terminal: TermionTerminal,
+    pub terminal: T,
     pub cursor: Selection,
     pub selected: Option<Selection>,
     pub context_help_message: String,
@@ -20,17 +20,11 @@ pub struct Draw {
     pub debug_mode: bool,
 }
 
-impl Default for Draw {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Draw {
-    pub fn new() -> Self {
+impl<T: Terminal> Draw<T> {
+    pub fn new(terminal: T) -> Self {
         Self {
             stdout: stdout().into_raw_mode().unwrap(),
-            terminal: TermionTerminal::new(),
+            terminal,
             cursor: Selection::Deck,
             selected: None,
             context_help_message: "".to_string(),

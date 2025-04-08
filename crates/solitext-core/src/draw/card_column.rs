@@ -17,7 +17,7 @@ struct ScrolledColumn {
     at_edge: Option<CardColumnScroll>,
 }
 
-impl Draw {
+impl<T: Terminal> Draw<T> {
     pub(super) const COLUMNS_INIT_COL: usize = 8;
     pub(super) const COLUMNS_INIT_ROW: usize = 2;
     pub(super) const COLUMNS_COL_STEP: usize = 5;

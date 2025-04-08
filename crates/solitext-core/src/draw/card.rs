@@ -3,9 +3,10 @@
 use super::Draw;
 use crate::cards::Card;
 use crate::game_state::CardState;
+use crate::terminal::Terminal;
 use termion::color::*;
 
-impl Draw {
+impl<T: Terminal> Draw<T> {
     pub(crate) fn display_card(
         &mut self,
         card: Card,

@@ -3,9 +3,10 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::selection::Selection;
+use crate::terminal::Terminal;
 use termion::color;
 
-impl Draw {
+impl<T: Terminal> Draw<T> {
     pub fn display_game_state(&mut self, game_state: &GameState) {
         self.clear_screen();
         self.set_colors(Self::default_fg(), Self::default_bg());

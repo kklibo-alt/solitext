@@ -3,15 +3,16 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
+use crate::terminal::Terminal;
 use std::io::stdin;
 use termion::event::Key;
 use termion::input::TermRead;
 
-pub struct Ui {
+pub struct Ui<T: Terminal> {
     /// The deck used to seed the current game (if any)
     game_deck: Option<Vec<Card>>,
     ui_state: UiState,
-    draw: Draw,
+    draw: Draw<T>,
 }
 
 enum UiState {
@@ -23,18 +24,12 @@ enum UiState {
     Quit,
 }
 
-impl Default for Ui {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Ui {
-    pub fn new() -> Self {
+impl<T: Terminal> Ui<T> {
+    pub fn new(terminal: T) -> Self {
         Self {
             game_deck: None,
             ui_state: UiState::StartScreen,
-            draw: Draw::new(),
+            draw: Draw::new(terminal),
         }
     }
     pub fn reset_for_new_game(&mut self) {
