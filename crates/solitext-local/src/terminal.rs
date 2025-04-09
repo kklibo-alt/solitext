@@ -91,4 +91,8 @@ impl Terminal for TermionTerminal {
         .unwrap();
         self.stdout.flush().unwrap();
     }
+
+    fn clear_screen(&mut self) {
+        writeln!(self.stdout, "{}", clear::All,).unwrap();
+    }
 }

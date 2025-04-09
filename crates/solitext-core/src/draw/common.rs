@@ -3,13 +3,8 @@
 use super::Draw;
 use crate::terminal;
 use crate::terminal::Terminal;
-use std::io::Write;
-use termion::clear;
 
 impl<T: Terminal> Draw<T> {
-    pub(crate) fn clear_screen(&mut self) {
-        writeln!(self.stdout, "{}", clear::All,).unwrap();
-    }
     pub(crate) fn default_bg2() -> terminal::Color {
         terminal::Color::Black
     }

@@ -48,4 +48,8 @@ impl<T: Terminal> Draw<T> {
     pub fn restore_terminal(&mut self) {
         self.terminal.restore_terminal();
     }
+
+    pub fn clear_screen(&mut self) {
+        self.terminal.clear_screen();
+    }
 }

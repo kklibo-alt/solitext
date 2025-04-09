@@ -19,4 +19,5 @@ pub trait Terminal {
     fn draw_text(&mut self, col: usize, row: usize, text: &str);
     fn set_up_terminal(&mut self);
     fn restore_terminal(&mut self);
+    fn clear_screen(&mut self);
 }
