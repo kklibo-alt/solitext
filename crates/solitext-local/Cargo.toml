@@ -9,4 +9,4 @@ path = "src/main.rs"
 
 [dependencies]
 solitext-core.workspace = true
-termion.workspace = true 
+termion = "4.0.5"
