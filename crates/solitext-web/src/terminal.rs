@@ -1,16 +1,23 @@
-use solitext_core::terminal::{Color, Key, Terminal};
+use ratzilla::CanvasBackend;
+use ratzilla::ratatui;
 use ratzilla::ratatui::style::Color as RatColor;
+use solitext_core::terminal::{Color, Key, Terminal};
 use std::cell::RefCell;
 use std::rc::Rc;
 
 pub struct RatzillaTerminal {
+    terminal: ratatui::Terminal<CanvasBackend>,
     fg_color: RatColor,
     bg_color: RatColor,
 }
 
 impl RatzillaTerminal {
     pub fn new() -> Self {
+        let backend = CanvasBackend::new().unwrap();
+        let terminal = ratatui::Terminal::new(backend).unwrap();
+
         Self {
+            terminal,
             fg_color: RatColor::White,
             bg_color: RatColor::Black,
         }
