@@ -3,7 +3,6 @@
 use super::Draw;
 use crate::game_state::GameState;
 use crate::terminal::{Color::*, Terminal};
-use std::io::Write;
 use std::{thread, time};
 
 impl<T: Terminal> Draw<T> {
@@ -67,7 +66,7 @@ impl<T: Terminal> Draw<T> {
         self.display_victory_message();
 
         self.set_colors(Self::default_fg2(), Self::default_bg2());
-        self.stdout.flush().unwrap();
+        self.flush();
     }
 
     pub fn display_start_screen(&mut self) {
@@ -81,7 +80,7 @@ Esc: Quit"#;
         self.draw_text_box(lines);
 
         self.set_colors(Self::default_fg2(), Self::default_bg2());
-        self.stdout.flush().unwrap();
+        self.flush();
     }
 
     pub fn display_game_menu(&mut self, game_state: &mut GameState) {
@@ -99,7 +98,7 @@ Esc: Return to game"#;
         self.draw_text_box(lines);
 
         self.set_colors(Self::default_fg2(), Self::default_bg2());
-        self.stdout.flush().unwrap();
+        self.flush();
     }
 
     pub fn display_help(&mut self, game_state: &mut GameState) {
@@ -119,6 +118,6 @@ Esc: Return to game"#;
         self.draw_text_box(lines);
 
         self.set_colors(Self::default_fg2(), Self::default_bg2());
-        self.stdout.flush().unwrap();
+        self.flush();
     }
 }

@@ -95,4 +95,8 @@ impl Terminal for TermionTerminal {
     fn clear_screen(&mut self) {
         writeln!(self.stdout, "{}", clear::All,).unwrap();
     }
+
+    fn flush(&mut self) {
+        self.stdout.flush().unwrap();
+    }
 }

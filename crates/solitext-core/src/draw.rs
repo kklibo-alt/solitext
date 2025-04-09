@@ -7,11 +7,8 @@ mod game_state;
 mod info;
 
 use crate::{selection::Selection, terminal::Color, terminal::Terminal};
-use std::io::{Stdout, stdout};
-use termion::raw::{IntoRawMode, RawTerminal};
 
 pub struct Draw<T: Terminal> {
-    pub stdout: RawTerminal<Stdout>,
     pub terminal: T,
     pub cursor: Selection,
     pub selected: Option<Selection>,
@@ -23,7 +20,6 @@ pub struct Draw<T: Terminal> {
 impl<T: Terminal> Draw<T> {
     pub fn new(terminal: T) -> Self {
         Self {
-            stdout: stdout().into_raw_mode().unwrap(),
             terminal,
             cursor: Selection::Deck,
             selected: None,
@@ -51,5 +47,9 @@ impl<T: Terminal> Draw<T> {
 
     pub fn clear_screen(&mut self) {
         self.terminal.clear_screen();
+    }
+
+    pub fn flush(&mut self) {
+        self.terminal.flush();
     }
 }

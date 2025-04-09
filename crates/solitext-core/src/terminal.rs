@@ -20,4 +20,5 @@ pub trait Terminal {
     fn set_up_terminal(&mut self);
     fn restore_terminal(&mut self);
     fn clear_screen(&mut self);
+    fn flush(&mut self);
 }
