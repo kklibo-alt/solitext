@@ -1,9 +1,10 @@
-use solitext_core::terminal::{Color, Terminal};
+use solitext_core::terminal::{Color, Key, Terminal};
 use std::io::Write;
-use std::io::{Stdout, stdout};
+use std::io::{Stdout, stdin, stdout};
+use termion::event;
+use termion::input::TermRead;
 use termion::raw::{IntoRawMode, RawTerminal};
 use termion::{clear, color, cursor};
-
 pub struct TermionTerminal {
     pub stdout: RawTerminal<Stdout>,
 }
@@ -32,6 +33,21 @@ impl TermionTerminal {
             Color::LightBlue => Box::new(color::LightBlue),
             Color::LightWhite => Box::new(color::LightWhite),
             Color::LightBlack => Box::new(color::LightBlack),
+        }
+    }
+
+    pub fn from_termion_key(key: event::Key) -> Key {
+        match key {
+            event::Key::Up => Key::Up,
+            event::Key::Down => Key::Down,
+            event::Key::Left => Key::Left,
+            event::Key::Right => Key::Right,
+            event::Key::Home => Key::Home,
+            event::Key::End => Key::End,
+            event::Key::Esc => Key::Esc,
+            event::Key::Char(c) => Key::Char(c),
+            event::Key::Ctrl(c) => Key::Ctrl(c),
+            _ => Key::Unknown,
         }
     }
 }
@@ -98,5 +114,9 @@ impl Terminal for TermionTerminal {
 
     fn flush(&mut self) {
         self.stdout.flush().unwrap();
+    }
+
+    fn get_key(&mut self) -> Key {
+        Self::from_termion_key(stdin().keys().next().unwrap().unwrap())
     }
 }

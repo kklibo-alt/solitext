@@ -162,9 +162,9 @@ impl<T: Terminal> Ui<T> {
             return;
         }
 
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        use crate::terminal::Key;
+        loop {
+            match self.draw.terminal.get_key() {
                 Key::Left => self.draw.cursor.move_left(),
                 Key::Right => self.draw.cursor.move_right(),
                 Key::Up => self.draw.cursor.select_up(),

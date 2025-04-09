@@ -11,6 +11,18 @@ pub enum Color {
     LightWhite,
     LightBlack,
 }
+pub enum Key {
+    Up,
+    Down,
+    Left,
+    Right,
+    Home,
+    End,
+    Esc,
+    Char(char),
+    Ctrl(char),
+    Unknown,
+}
 
 pub trait Terminal {
     fn set_colors2(&mut self, foreground: Color, background: Color);
@@ -21,4 +33,5 @@ pub trait Terminal {
     fn restore_terminal(&mut self);
     fn clear_screen(&mut self);
     fn flush(&mut self);
+    fn get_key(&mut self) -> Key;
 }
