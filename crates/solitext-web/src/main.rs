@@ -1,3 +1,5 @@
+mod terminal;
+
 use std::{cell::RefCell, io, rc::Rc};
 
 use ratzilla::ratatui::{

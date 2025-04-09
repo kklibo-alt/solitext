@@ -1,3 +1,4 @@
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Color {
     Red,
     Green,
@@ -11,6 +12,8 @@ pub enum Color {
     LightWhite,
     LightBlack,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Key {
     Up,
     Down,

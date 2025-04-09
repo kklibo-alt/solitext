@@ -8,4 +8,5 @@ name = "web"
 path = "src/main.rs"
 
 [dependencies]
+solitext-core.workspace = true
 ratzilla = "0.0.5"
