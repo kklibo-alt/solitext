@@ -3,10 +3,7 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use crate::terminal::Terminal;
-use std::io::stdin;
-use termion::event::Key;
-use termion::input::TermRead;
+use crate::terminal::{Key, Terminal};
 
 pub struct Ui<T: Terminal> {
     /// The deck used to seed the current game (if any)
@@ -199,9 +196,8 @@ impl<T: Terminal> Ui<T> {
 
     fn run_start_screen(&mut self) {
         self.draw.display_start_screen();
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        loop {
+            match self.draw.terminal.get_key() {
                 Key::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     break;
@@ -222,9 +218,8 @@ impl<T: Terminal> Ui<T> {
     /// Returns: true IFF UiState has changed
     fn run_game_menu(&mut self, game_state: &mut GameState) -> bool {
         self.draw.display_game_menu(game_state);
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        loop {
+            match self.draw.terminal.get_key() {
                 Key::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     return true;
@@ -247,15 +242,12 @@ impl<T: Terminal> Ui<T> {
                 _ => {}
             }
         }
-        false
     }
 
     fn run_victory(&mut self, game_state: &mut GameState) {
         self.draw.display_victory(game_state);
-
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
+        loop {
+            match self.draw.terminal.get_key() {
                 Key::Char('y') => {
                     self.ui_state = UiState::NewGame(game_state.game_mode);
                     break;
@@ -292,7 +284,7 @@ impl<T: Terminal> Ui<T> {
 
     pub fn run_help(&mut self, game_state: &mut GameState) {
         self.draw.display_help(game_state);
-        stdin().keys().next();
+        self.draw.terminal.get_key();
     }
 
     pub fn run(&mut self, game_state: &mut GameState) {
