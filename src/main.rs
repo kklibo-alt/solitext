@@ -1,16 +1,26 @@
-use crate::cards::Card;
-use crate::game_state::GameState;
-use crate::tui::Ui;
-
+mod app;
 mod cards;
 mod draw;
 mod game_logic;
 mod game_state;
 mod selection;
-mod tui;
 
+#[cfg(feature = "native")]
+mod tui;
+#[cfg(feature = "web")]
+mod web;
+
+#[cfg(feature = "native")]
 fn main() {
-    let mut game_state = GameState::init(Card::ordered_deck());
-    let mut ui = Ui::new();
-    ui.run(&mut game_state);
+    let app = app::App::new();
+    let mut ui = tui::Ui::new(app);
+    ui.run();
 }
+
+#[cfg(feature = "web")]
+fn main() {
+    web::run().unwrap();
+}
+
+#[cfg(not(any(feature = "native", feature = "web")))]
+compile_error!("Either the 'native' or 'web' feature must be enabled");

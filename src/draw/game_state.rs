@@ -1,39 +1,40 @@
-use super::{Draw, Renderer};
+use super::Renderer;
+use crate::app::App;
 use crate::game_state::GameState;
 use crate::selection::Selection;
 use ratatui::style::Color;
+use ratatui::Frame;
 
-impl Draw {
-    pub fn display_game_state(&mut self, game_state: &GameState) {
-        let cursor = self.cursor;
-        let selected = self.selected;
-        let debug_mode = self.debug_mode;
-        let debug_msg = self.debug_message.clone();
-        let ctx_msg = self.context_help_message.clone();
+pub(crate) fn render_game(frame: &mut Frame, app: &App) {
+    let buf = frame.buffer_mut();
+    let mut r = Renderer::new(buf, app.cursor, app.selected, app.debug_mode);
+    r.clear();
 
+    r.display_info(&app.context_help_message, &app.debug_message);
+    r.display_deck(&app.game_state);
+    r.display_columns(&app.game_state);
+    r.display_piles(&app.game_state);
+
+    r.set_colors(Color::Blue, Renderer::default_bg());
+    r.display_collection_selection_cursor();
+
+    r.set_colors(Renderer::default_fg(), Color::LightGreen);
+    r.display_card_selection_cursor(app.cursor, &app.game_state);
+
+    r.set_colors(Renderer::default_fg(), Color::LightYellow);
+    if let Some(selected) = app.selected {
+        r.display_card_selection_cursor(selected, &app.game_state);
+    }
+
+    r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+}
+
+#[cfg(feature = "native")]
+impl super::Draw {
+    pub fn display_game_state(&mut self, app: &App) {
         self.terminal
             .draw(|frame| {
-                let buf = frame.buffer_mut();
-                let mut r = Renderer::new(buf, cursor, selected, debug_mode);
-                r.clear();
-
-                r.display_info(&ctx_msg, &debug_msg);
-                r.display_deck(game_state);
-                r.display_columns(game_state);
-                r.display_piles(game_state);
-
-                r.set_colors(Color::Blue, Renderer::default_bg());
-                r.display_collection_selection_cursor();
-
-                r.set_colors(Renderer::default_fg(), Color::LightGreen);
-                r.display_card_selection_cursor(cursor, game_state);
-
-                r.set_colors(Renderer::default_fg(), Color::LightYellow);
-                if let Some(selected) = selected {
-                    r.display_card_selection_cursor(selected, game_state);
-                }
-
-                r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+                render_game(frame, app);
             })
             .unwrap();
     }

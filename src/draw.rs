@@ -6,19 +6,21 @@ mod foundation;
 mod game_state;
 mod info;
 
+#[cfg(feature = "web")]
+pub(crate) use game_state::render_game;
+#[cfg(feature = "web")]
+pub(crate) use info::{render_game_menu, render_help, render_start_screen, render_victory};
+
 use crate::selection::Selection;
 use ratatui::buffer::Buffer;
 use ratatui::style::Style;
+#[cfg(feature = "native")]
 use ratatui::DefaultTerminal;
 
+#[cfg(feature = "native")]
 pub struct Draw {
     terminal: DefaultTerminal,
     restored: bool,
-    pub cursor: Selection,
-    pub selected: Option<Selection>,
-    pub context_help_message: String,
-    pub debug_message: String,
-    pub debug_mode: bool,
 }
 
 pub(crate) struct Renderer<'a> {
@@ -52,16 +54,12 @@ impl<'a> Renderer<'a> {
     }
 }
 
+#[cfg(feature = "native")]
 impl Draw {
     pub fn new() -> Self {
         Self {
             terminal: ratatui::init(),
             restored: false,
-            cursor: Selection::Deck,
-            selected: None,
-            context_help_message: String::new(),
-            debug_message: String::new(),
-            debug_mode: false,
         }
     }
 
@@ -73,6 +71,7 @@ impl Draw {
     }
 }
 
+#[cfg(feature = "native")]
 impl Drop for Draw {
     fn drop(&mut self) {
         self.restore();
