@@ -1,126 +1,182 @@
-//! Draws info for the user: text labels, instructions, menus, messages, etc.
-
-use super::Draw;
+use super::{Draw, Renderer};
 use crate::game_state::GameState;
-use std::io::Write;
+use crate::selection::Selection;
+use ratatui::style::Color;
 use std::{thread, time};
-use termion::color;
 
-impl Draw {
-    pub(super) fn display_info(&mut self) {
-        use color::*;
-
-        self.set_colors(LightYellow, Self::default_bg());
+impl Renderer<'_> {
+    pub(super) fn display_info(&mut self, context_help_message: &str, debug_message: &str) {
+        self.set_colors(Color::LightYellow, Self::default_bg());
         self.draw_text(1, 1, "Solitext");
 
-        self.set_colors(LightBlack, Self::default_bg());
+        self.set_colors(Color::DarkGray, Self::default_bg());
         self.draw_text(32, 1, "h: Help  Esc: Menu");
         self.draw_text(2, Self::CURSOR_ROW + 1, "Space: Select/Move cards");
-        self.draw_text(
-            2,
-            Self::CURSOR_ROW + 2,
-            self.context_help_message.clone().as_str(),
-        );
+        self.draw_text(2, Self::CURSOR_ROW + 2, context_help_message);
         if self.debug_mode {
-            self.draw_text(2, Self::CURSOR_ROW + 3, self.debug_message.clone().as_str());
+            self.draw_text(2, Self::CURSOR_ROW + 3, debug_message);
         }
     }
+}
 
-    fn display_victory_message(&mut self) {
-        const CENTER: (usize, usize) = (26, 5);
-        const WIDTH_VAL: usize = 3;
-        fn draw_box(s: &mut Draw, size: usize) {
-            s.draw_box(
-                CENTER.0 - WIDTH_VAL - size,
-                CENTER.1 - size,
-                CENTER.0 + WIDTH_VAL + size,
-                CENTER.1 + size,
-            );
-        }
-        fn pause() {
-            thread::sleep(time::Duration::from_millis(300));
-        }
-
-        self.set_colors(color::Blue, Self::default_bg());
-        draw_box(self, 3);
-        pause();
-        self.set_colors(color::Green, Self::default_bg());
-        draw_box(self, 2);
-        pause();
-        self.set_colors(color::Red, Self::default_bg());
-        draw_box(self, 1);
-        pause();
-
-        self.set_colors(color::LightYellow, color::LightBlue);
-        self.draw_text(CENTER.0 - 3, CENTER.1, "YOU WIN");
-        pause();
-        pause();
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.draw_text(CENTER.0 - 8, CENTER.1 + 4, "Play again? (y/n)");
+impl Draw {
+    fn render_base_game(r: &mut Renderer, game_state: &GameState) {
+        r.display_deck(game_state);
+        r.display_columns(game_state);
+        r.display_piles(game_state);
     }
 
     pub fn display_victory(&mut self, game_state: &mut GameState) {
-        self.clear_screen();
-        //just display cards
-        self.display_deck(game_state);
-        self.display_columns(game_state);
-        self.display_piles(game_state);
+        let debug_mode = self.debug_mode;
+        const CENTER: (usize, usize) = (26, 5);
+        const W: usize = 3;
+        let pause = || thread::sleep(time::Duration::from_millis(300));
 
-        self.display_victory_message();
+        let anim_boxes: &[(Color, usize)] = &[
+            (Color::Blue, 3),
+            (Color::Green, 2),
+            (Color::Red, 1),
+        ];
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+        for step in 0..anim_boxes.len() {
+            self.terminal
+                .draw(|frame| {
+                    let buf = frame.buffer_mut();
+                    let mut r = Renderer::new(buf, Selection::Deck, None, debug_mode);
+                    r.clear();
+                    Self::render_base_game(&mut r, game_state);
+
+                    for &(color, size) in &anim_boxes[..=step] {
+                        r.set_colors(color, Renderer::default_bg());
+                        r.draw_box(
+                            CENTER.0 - W - size,
+                            CENTER.1 - size,
+                            CENTER.0 + W + size,
+                            CENTER.1 + size,
+                        );
+                    }
+                })
+                .unwrap();
+            pause();
+        }
+
+        self.terminal
+            .draw(|frame| {
+                let buf = frame.buffer_mut();
+                let mut r = Renderer::new(buf, Selection::Deck, None, debug_mode);
+                r.clear();
+                Self::render_base_game(&mut r, game_state);
+
+                for &(color, size) in anim_boxes {
+                    r.set_colors(color, Renderer::default_bg());
+                    r.draw_box(
+                        CENTER.0 - W - size,
+                        CENTER.1 - size,
+                        CENTER.0 + W + size,
+                        CENTER.1 + size,
+                    );
+                }
+                r.set_colors(Color::LightYellow, Color::LightBlue);
+                r.draw_text(CENTER.0 - 3, CENTER.1, "YOU WIN");
+            })
+            .unwrap();
+        pause();
+        pause();
+
+        self.terminal
+            .draw(|frame| {
+                let buf = frame.buffer_mut();
+                let mut r = Renderer::new(buf, Selection::Deck, None, debug_mode);
+                r.clear();
+                Self::render_base_game(&mut r, game_state);
+
+                for &(color, size) in anim_boxes {
+                    r.set_colors(color, Renderer::default_bg());
+                    r.draw_box(
+                        CENTER.0 - W - size,
+                        CENTER.1 - size,
+                        CENTER.0 + W + size,
+                        CENTER.1 + size,
+                    );
+                }
+                r.set_colors(Color::LightYellow, Color::LightBlue);
+                r.draw_text(CENTER.0 - 3, CENTER.1, "YOU WIN");
+
+                r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+                r.draw_text(CENTER.0 - 8, CENTER.1 + 4, "Play again? (y/n)");
+            })
+            .unwrap();
     }
 
     pub fn display_start_screen(&mut self) {
-        self.clear_screen();
-        self.set_colors(color::LightYellow, Self::default_bg());
-        self.draw_text(16, 1, "Solitext    ♥ ♠ ♦ ♣");
+        self.terminal
+            .draw(|frame| {
+                let buf = frame.buffer_mut();
+                let mut r = Renderer::new(buf, Selection::Deck, None, false);
+                r.clear();
 
-        let lines = r#"1: New Game (Draw One)
+                r.set_colors(Color::LightYellow, Renderer::default_bg());
+                r.draw_text(16, 1, "Solitext    ♥ ♠ ♦ ♣");
+
+                let lines = r#"1: New Game (Draw One)
 3: New Game (Draw Three)
 Esc: Quit"#;
-        self.draw_text_box(lines);
+                r.draw_text_box(lines);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+                r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+            })
+            .unwrap();
     }
 
     pub fn display_game_menu(&mut self, game_state: &mut GameState) {
-        self.clear_screen();
-        //just display cards
-        self.display_deck(game_state);
-        self.display_columns(game_state);
-        self.display_piles(game_state);
+        let debug_mode = self.debug_mode;
+        let cursor = self.cursor;
+        let selected = self.selected;
 
-        let lines = r#"1: New Game (Draw One)
+        self.terminal
+            .draw(|frame| {
+                let buf = frame.buffer_mut();
+                let mut r = Renderer::new(buf, cursor, selected, debug_mode);
+                r.clear();
+
+                Self::render_base_game(&mut r, game_state);
+
+                let lines = r#"1: New Game (Draw One)
 3: New Game (Draw Three)
 r: Restart current game
 q: Quit
 Esc: Return to game"#;
-        self.draw_text_box(lines);
+                r.draw_text_box(lines);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+                r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+            })
+            .unwrap();
     }
 
     pub fn display_help(&mut self, game_state: &mut GameState) {
-        self.clear_screen();
-        //just display cards
-        self.display_deck(game_state);
-        self.display_columns(game_state);
-        self.display_piles(game_state);
+        let debug_mode = self.debug_mode;
+        let cursor = self.cursor;
+        let selected = self.selected;
 
-        let lines = r#"Controls:
+        self.terminal
+            .draw(|frame| {
+                let buf = frame.buffer_mut();
+                let mut r = Renderer::new(buf, cursor, selected, debug_mode);
+                r.clear();
+
+                Self::render_base_game(&mut r, game_state);
+
+                let lines = r#"Controls:
 
  Arrow keys, Home, End: Move cursor
  Enter: Hit/move card to stack
  Space: Select/move cards
  x: Clear selection
  Ctrl+c: Quit"#;
-        self.draw_text_box(lines);
+                r.draw_text_box(lines);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
-        self.stdout.flush().unwrap();
+                r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+            })
+            .unwrap();
     }
 }

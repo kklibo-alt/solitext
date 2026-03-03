@@ -1,11 +1,9 @@
-//! Draws a column of cards in the tableau.
-
-use super::Draw;
+use super::Renderer;
 use crate::cards::Card;
 use crate::game_state::{CardState, GameState};
 use crate::selection::Selection;
+use ratatui::style::Color;
 use std::cmp::min;
-use termion::color::*;
 
 enum CardColumnScroll {
     AtMaxRow,
@@ -17,7 +15,7 @@ struct ScrolledColumn {
     at_edge: Option<CardColumnScroll>,
 }
 
-impl Draw {
+impl Renderer<'_> {
     pub(super) const COLUMNS_INIT_COL: usize = 8;
     pub(super) const COLUMNS_INIT_ROW: usize = 2;
     pub(super) const COLUMNS_COL_STEP: usize = 5;
@@ -32,11 +30,11 @@ impl Draw {
             }) = Self::scrolled_column(&column.0, self.selection_count(index))
             {
                 if !matches!(at_edge, Some(CardColumnScroll::AtMaxRow)) {
-                    self.set_colors(White, Green);
+                    self.set_colors(Color::Gray, Color::Green);
                     self.draw_text(col - 1, row, "↑  ↑");
                 }
                 if !matches!(at_edge, Some(CardColumnScroll::AtMinRow)) {
-                    self.set_colors(White, Green);
+                    self.set_colors(Color::Gray, Color::Green);
                     self.draw_text(
                         col - 1,
                         row - 1 + (visible_cards.len() * Self::COLUMNS_ROW_STEP),
@@ -59,7 +57,6 @@ impl Draw {
     }
 
     const COLUMN_MAX_VISIBLE_CARDS: usize = 7;
-    /// Scrolled offset in card column + position info, or None if not scrolled
     fn scrolled_column_offset(
         cards: usize,
         selected: usize,
@@ -81,7 +78,6 @@ impl Draw {
         Some((offset, position))
     }
 
-    /// A scrolled card column's visible cards, or None if not scrolled
     fn scrolled_column(cards: &[(Card, CardState)], selected: usize) -> Option<ScrolledColumn> {
         Self::scrolled_column_offset(cards.len(), selected).map(|(offset, at_edge)| {
             ScrolledColumn {
@@ -91,17 +87,16 @@ impl Draw {
         })
     }
 
-    /// A column's active selection count; 0 if not selected.
-    fn selection_count(&mut self, column_index: usize) -> usize {
-        if let Selection::Column { index, card_count } = self.cursor {
-            if column_index == index {
-                return card_count;
-            }
+    fn selection_count(&self, column_index: usize) -> usize {
+        if let Selection::Column { index, card_count } = self.cursor
+            && column_index == index
+        {
+            return card_count;
         }
-        if let Some(Selection::Column { index, card_count }) = self.selected {
-            if column_index == index {
-                return card_count;
-            }
+        if let Some(Selection::Column { index, card_count }) = self.selected
+            && column_index == index
+        {
+            return card_count;
         }
         0
     }
@@ -125,7 +120,6 @@ impl Draw {
             .checked_sub(card_count)
             .expect("should not select nonexistent cards");
 
-        // Don't draw past the end of the column
         let upper = min(
             upper,
             Self::COLUMNS_INIT_ROW + Self::COLUMNS_ROW_STEP * Self::COLUMN_MAX_VISIBLE_CARDS,

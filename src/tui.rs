@@ -3,9 +3,7 @@ use crate::draw::Draw;
 use crate::game_logic;
 use crate::game_state::{GameMode, GameState};
 use crate::selection::Selection;
-use std::io::stdin;
-use termion::event::Key;
-use termion::input::TermRead;
+use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 
 pub struct Ui {
     /// The deck used to seed the current game (if any)
@@ -137,14 +135,10 @@ impl Ui {
     fn turn_actions(&mut self, game_state: &mut GameState) -> bool {
         // Ensure a face-up card at the end of each column
         game_logic::face_up_on_columns(game_state);
-        // Hit if the deck has cards and the drawn deck is empty
-        // game_state.auto_hit(); [disabled; should remove permanently?]
         // Fix column selections, if needed
         self.apply_column_selection_rules(game_state);
         // Update context help line
         self.set_context_help_message();
-
-        // (Any other automatic state changes can go here too)
 
         if game_logic::victory(game_state) {
             self.draw.debug_message = "Victory".to_string();
@@ -156,37 +150,47 @@ impl Ui {
         false
     }
 
+    fn read_key_event() -> event::KeyEvent {
+        loop {
+            if let Ok(Event::Key(key)) = event::read()
+                && key.kind == KeyEventKind::Press
+            {
+                return key;
+            }
+        }
+    }
+
     fn run_game(&mut self, game_state: &mut GameState) {
         if self.turn_actions(game_state) {
             return;
         }
 
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Left => self.draw.cursor.move_left(),
-                Key::Right => self.draw.cursor.move_right(),
-                Key::Up => self.draw.cursor.select_up(),
-                Key::Down => self.draw.cursor.select_down(),
-                Key::Home => self.draw.cursor = Selection::Deck,
-                Key::End => self.draw.cursor = Selection::Pile { index: 0 },
-                Key::Char(' ') => self.cards_action(game_state),
-                Key::Char('\n') => self.enter_key_action(game_state),
-                Key::Char('c') if self.draw.debug_mode => {
+        loop {
+            let key = Self::read_key_event();
+            match key.code {
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    self.ui_state = UiState::Quit;
+                    break;
+                }
+                KeyCode::Left => self.draw.cursor.move_left(),
+                KeyCode::Right => self.draw.cursor.move_right(),
+                KeyCode::Up => self.draw.cursor.select_up(),
+                KeyCode::Down => self.draw.cursor.select_down(),
+                KeyCode::Home => self.draw.cursor = Selection::Deck,
+                KeyCode::End => self.draw.cursor = Selection::Pile { index: 0 },
+                KeyCode::Char(' ') => self.cards_action(game_state),
+                KeyCode::Enter => self.enter_key_action(game_state),
+                KeyCode::Char('c') if self.draw.debug_mode => {
                     self.debug_unchecked_cards_action(game_state)
                 }
-                Key::Char('x') => self.draw.selected = None,
-                Key::Char('z') if self.draw.debug_mode => self.debug_check_valid(game_state),
-                Key::Char('d') => self.draw.debug_mode = !self.draw.debug_mode,
-                Key::Char('h') => self.run_help(game_state),
-                Key::Esc => {
+                KeyCode::Char('x') => self.draw.selected = None,
+                KeyCode::Char('z') if self.draw.debug_mode => self.debug_check_valid(game_state),
+                KeyCode::Char('d') => self.draw.debug_mode = !self.draw.debug_mode,
+                KeyCode::Char('h') => self.run_help(game_state),
+                KeyCode::Esc => {
                     if self.run_game_menu(game_state) {
                         break;
                     }
-                }
-                Key::Ctrl('c') => {
-                    self.ui_state = UiState::Quit;
-                    break;
                 }
                 _ => {}
             }
@@ -198,18 +202,22 @@ impl Ui {
 
     fn run_start_screen(&mut self) {
         self.draw.display_start_screen();
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('1') => {
+        loop {
+            let key = Self::read_key_event();
+            match key.code {
+                KeyCode::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     break;
                 }
-                Key::Char('3') => {
+                KeyCode::Char('3') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawThree);
                     break;
                 }
-                Key::Esc | Key::Ctrl('c') => {
+                KeyCode::Esc => {
+                    self.ui_state = UiState::Quit;
+                    break;
+                }
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -221,45 +229,52 @@ impl Ui {
     /// Returns: true IFF UiState has changed
     fn run_game_menu(&mut self, game_state: &mut GameState) -> bool {
         self.draw.display_game_menu(game_state);
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('1') => {
+        loop {
+            let key = Self::read_key_event();
+            match key.code {
+                KeyCode::Char('1') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawOne);
                     return true;
                 }
-                Key::Char('3') => {
+                KeyCode::Char('3') => {
                     self.ui_state = UiState::NewGame(GameMode::DrawThree);
                     return true;
                 }
-                Key::Char('r') => {
+                KeyCode::Char('r') => {
                     self.ui_state = UiState::RestartGame;
                     return true;
                 }
-                Key::Char('q') | Key::Ctrl('c') => {
+                KeyCode::Char('q') => {
                     self.ui_state = UiState::Quit;
                     return true;
                 }
-                Key::Esc => {
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
+                    self.ui_state = UiState::Quit;
+                    return true;
+                }
+                KeyCode::Esc => {
                     return false;
                 }
                 _ => {}
             }
         }
-        false
     }
 
     fn run_victory(&mut self, game_state: &mut GameState) {
         self.draw.display_victory(game_state);
 
-        let stdin = stdin();
-        for c in stdin.keys() {
-            match c.unwrap() {
-                Key::Char('y') => {
+        loop {
+            let key = Self::read_key_event();
+            match key.code {
+                KeyCode::Char('y') => {
                     self.ui_state = UiState::NewGame(game_state.game_mode);
                     break;
                 }
-                Key::Char('n') | Key::Esc | Key::Ctrl('c') => {
+                KeyCode::Char('n') | KeyCode::Esc => {
+                    self.ui_state = UiState::Quit;
+                    break;
+                }
+                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     self.ui_state = UiState::Quit;
                     break;
                 }
@@ -291,12 +306,10 @@ impl Ui {
 
     pub fn run_help(&mut self, game_state: &mut GameState) {
         self.draw.display_help(game_state);
-        stdin().keys().next();
+        Self::read_key_event();
     }
 
     pub fn run(&mut self, game_state: &mut GameState) {
-        self.draw.set_up_terminal();
-
         loop {
             match self.ui_state {
                 UiState::StartScreen => self.run_start_screen(),
@@ -308,10 +321,8 @@ impl Ui {
             }
         }
 
-        self.draw.restore_terminal();
-        self.draw
-            .draw_text(1, 1, "please send bug reports via IRC or ham radio");
-        self.draw.draw_text(1, 1, "");
+        self.draw.restore();
+        println!("please send bug reports via IRC or ham radio");
     }
 }
 

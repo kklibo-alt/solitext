@@ -1,34 +1,45 @@
-//! Draws the full game state with selections.
-
-use super::Draw;
+use super::{Draw, Renderer};
 use crate::game_state::GameState;
 use crate::selection::Selection;
-use termion::color;
+use ratatui::style::Color;
 
 impl Draw {
     pub fn display_game_state(&mut self, game_state: &GameState) {
-        self.clear_screen();
-        self.set_colors(Self::default_fg(), Self::default_bg());
+        let cursor = self.cursor;
+        let selected = self.selected;
+        let debug_mode = self.debug_mode;
+        let debug_msg = self.debug_message.clone();
+        let ctx_msg = self.context_help_message.clone();
 
-        self.display_info();
-        self.display_deck(game_state);
-        self.display_columns(game_state);
-        self.display_piles(game_state);
+        self.terminal
+            .draw(|frame| {
+                let buf = frame.buffer_mut();
+                let mut r = Renderer::new(buf, cursor, selected, debug_mode);
+                r.clear();
 
-        self.set_colors(color::Blue, Self::default_bg());
-        self.display_collection_selection_cursor();
+                r.display_info(&ctx_msg, &debug_msg);
+                r.display_deck(game_state);
+                r.display_columns(game_state);
+                r.display_piles(game_state);
 
-        self.set_colors(Self::default_fg(), color::LightGreen);
-        self.display_card_selection_cursor(self.cursor, game_state);
+                r.set_colors(Color::Blue, Renderer::default_bg());
+                r.display_collection_selection_cursor();
 
-        self.set_colors(Self::default_fg(), color::LightYellow);
-        if let Some(selected) = self.selected {
-            self.display_card_selection_cursor(selected, game_state);
-        }
+                r.set_colors(Renderer::default_fg(), Color::LightGreen);
+                r.display_card_selection_cursor(cursor, game_state);
 
-        self.set_colors(Self::default_fg(), Self::default_bg());
+                r.set_colors(Renderer::default_fg(), Color::LightYellow);
+                if let Some(selected) = selected {
+                    r.display_card_selection_cursor(selected, game_state);
+                }
+
+                r.set_colors(Renderer::default_fg(), Renderer::default_bg());
+            })
+            .unwrap();
     }
+}
 
+impl Renderer<'_> {
     fn selection_col(selection: Selection) -> usize {
         match selection {
             Selection::Deck => Self::DECK_INIT_COL,

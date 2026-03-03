@@ -1,33 +1,23 @@
-//! Common drawing code.
+use super::Renderer;
+use ratatui::style::{Color, Style};
 
-use super::Draw;
-use std::io::Write;
-use termion::{clear, color, cursor};
-
-impl Draw {
-    pub(crate) fn clear_screen(&mut self) {
-        writeln!(self.stdout, "{}", clear::All,).unwrap();
+impl Renderer<'_> {
+    pub(crate) fn default_bg() -> Color {
+        Color::Black
     }
 
-    pub(crate) fn default_bg() -> impl color::Color {
-        color::Black
-    }
-    pub(crate) fn default_fg() -> impl color::Color {
-        color::LightWhite
+    pub(crate) fn default_fg() -> Color {
+        Color::White
     }
 
-    pub(crate) fn set_colors(
-        &mut self,
-        foreground: impl color::Color,
-        background: impl color::Color,
-    ) {
-        writeln!(
-            self.stdout,
-            "{}{}",
-            color::Fg(foreground),
-            color::Bg(background),
-        )
-        .unwrap();
+    pub(crate) fn set_colors(&mut self, fg: Color, bg: Color) {
+        self.style = Style::default().fg(fg).bg(bg);
+    }
+
+    pub(crate) fn draw_text(&mut self, col: usize, row: usize, text: &str) {
+        let x = col.saturating_sub(1) as u16;
+        let y = row.saturating_sub(1) as u16;
+        self.buf.set_string(x, y, text, self.style);
     }
 
     pub(crate) fn draw_box(&mut self, col1: usize, row1: usize, col2: usize, row2: usize) {
@@ -37,41 +27,6 @@ impl Draw {
                 self.draw_text(col, row, "█");
             }
         }
-    }
-
-    pub fn draw_text(&mut self, col: usize, row: usize, text: &str) {
-        let col = u16::try_from(col).expect("column should fit in a u16");
-        let row = u16::try_from(row).expect("row should fit in a u16");
-
-        writeln!(self.stdout, "{}{}", cursor::Goto(col, row), text).unwrap();
-    }
-
-    pub fn set_up_terminal(&mut self) {
-        writeln!(
-            self.stdout,
-            "{}{}{}{}{}",
-            color::Fg(Self::default_fg()),
-            color::Bg(Self::default_bg()),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Hide,
-        )
-        .unwrap();
-        self.stdout.flush().unwrap();
-    }
-
-    pub fn restore_terminal(&mut self) {
-        writeln!(
-            self.stdout,
-            "{}{}{}{}{}",
-            color::Fg(color::Reset),
-            color::Bg(color::Reset),
-            clear::All,
-            cursor::Goto(1, 1),
-            cursor::Show,
-        )
-        .unwrap();
-        self.stdout.flush().unwrap();
     }
 
     fn centered_box_corners(width: usize, height: usize) -> (usize, usize, usize, usize) {
@@ -89,16 +44,16 @@ impl Draw {
         self.draw_box(col1, row1, col2, row2);
     }
 
-    pub fn draw_text_box(&mut self, lines: &str) {
+    pub(crate) fn draw_text_box(&mut self, lines: &str) {
         let height = lines.split('\n').count();
 
         const WIDTH: usize = 38;
-        self.set_colors(color::LightBlue, Self::default_bg());
+        self.set_colors(Color::LightBlue, Self::default_bg());
         self.draw_centered_box(WIDTH, height + 2);
-        self.set_colors(color::White, Self::default_bg());
+        self.set_colors(Color::Gray, Self::default_bg());
         self.draw_centered_box(WIDTH - 2, height);
 
-        self.set_colors(color::LightBlack, color::White);
+        self.set_colors(Color::DarkGray, Color::Gray);
         let (col, mut row, _, _) = Self::centered_box_corners(WIDTH - 2, height);
 
         for line in lines.split('\n') {
