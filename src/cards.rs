@@ -1,5 +1,5 @@
+use rand::rng;
 use rand::seq::SliceRandom;
-use rand::thread_rng;
 use std::fmt::{Display, Formatter};
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -111,7 +111,7 @@ impl Card {
     }
 
     pub fn shuffled_deck() -> Vec<Self> {
-        let mut rng = thread_rng();
+        let mut rng = rng();
         let mut deck = Self::ordered_deck();
         deck.shuffle(&mut rng);
         deck
