@@ -163,3 +163,67 @@ impl Selection {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::cards::Card;
+
+    #[test]
+    fn test_same_collection() {
+        assert!(!Selection::Deck.same_collection(Selection::Column {
+            index: 1,
+            card_count: 1
+        }));
+        assert!(
+            !Selection::Column {
+                index: 1,
+                card_count: 1
+            }
+            .same_collection(Selection::Pile { index: 1 })
+        );
+        assert!(!Selection::Pile { index: 1 }.same_collection(Selection::Deck));
+
+        assert!(Selection::Deck.same_collection(Selection::Deck));
+
+        assert!(
+            Selection::Column {
+                index: 1,
+                card_count: 1
+            }
+            .same_collection(Selection::Column {
+                index: 1,
+                card_count: 1
+            })
+        );
+        assert!(
+            Selection::Column {
+                index: 1,
+                card_count: 2
+            }
+            .same_collection(Selection::Column {
+                index: 1,
+                card_count: 1
+            })
+        );
+        assert!(
+            !Selection::Column {
+                index: 2,
+                card_count: 1
+            }
+            .same_collection(Selection::Column {
+                index: 1,
+                card_count: 1
+            })
+        );
+
+        assert!(Selection::Pile { index: 1 }.same_collection(Selection::Pile { index: 1 }));
+        assert!(!Selection::Pile { index: 2 }.same_collection(Selection::Pile { index: 1 }));
+    }
+
+    #[test]
+    fn test_selected_collection() {
+        let mut a = GameState::init(Card::ordered_deck());
+        let _b = Selection::Deck.selected_collection(&mut a);
+    }
+}

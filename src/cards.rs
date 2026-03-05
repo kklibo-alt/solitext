@@ -95,7 +95,7 @@ impl Display for Card {
 }
 
 impl Card {
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn new(suit: Suit, rank: Rank) -> Self {
         Self { suit, rank }
     }

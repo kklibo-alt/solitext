@@ -32,8 +32,8 @@ impl Renderer<'_> {
     fn centered_box_corners(width: usize, height: usize) -> (usize, usize, usize, usize) {
         const CENTER: (usize, usize) = (26, 5);
         (
-            CENTER.0 - width / 2,
-            CENTER.1 - height / 2,
+            CENTER.0.saturating_sub(width / 2),
+            CENTER.1.saturating_sub(height / 2),
             CENTER.0 + width / 2,
             CENTER.1 + height / 2,
         )

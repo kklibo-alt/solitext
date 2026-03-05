@@ -1,5 +1,4 @@
-use crate::cards::{Card, Rank, Suit};
-use strum::IntoEnumIterator;
+use crate::cards::Card;
 
 #[derive(Debug, Default, Copy, Clone, Eq, PartialEq)]
 pub enum CardState {
@@ -66,17 +65,11 @@ impl CardCollection for CardColumn {
 
 impl CardCollection for CardPile {
     fn take(&mut self, count: usize) -> Result<Vec<Card>, ()> {
-        let mut v = vec![];
-        match count {
-            1 => {
-                let val = self.0.pop().ok_or(())?;
-                v.push(val);
-            }
-            _ => return Err(()),
+        if count != 1 {
+            return Err(());
         }
-        v.reverse();
-
-        Ok(v)
+        let card = self.0.pop().ok_or(())?;
+        Ok(vec![card])
     }
     fn receive(&mut self, cards: Vec<Card>) -> Result<(), ()> {
         if cards.len() != 1 {
@@ -96,17 +89,11 @@ impl CardCollection for CardPile {
 
 impl CardCollection for Vec<Card> {
     fn take(&mut self, count: usize) -> Result<Vec<Card>, ()> {
-        let mut v = vec![];
-        match count {
-            1 => {
-                let val = self.pop().ok_or(())?;
-                v.push(val);
-            }
-            _ => return Err(()),
+        if count != 1 {
+            return Err(());
         }
-        v.reverse();
-
-        Ok(v)
+        let card = self.pop().ok_or(())?;
+        Ok(vec![card])
     }
     fn receive(&mut self, cards: Vec<Card>) -> Result<(), ()> {
         if cards.len() != 1 {
@@ -162,9 +149,8 @@ impl GameState {
 
     pub fn deck_hit(&mut self) {
         if self.deck.is_empty() && !self.deck_drawn.is_empty() {
-            self.deck = self.deck_drawn.clone();
+            std::mem::swap(&mut self.deck, &mut self.deck_drawn);
             self.deck.reverse();
-            self.deck_drawn.clear();
         }
 
         let count = match self.game_mode {
@@ -179,15 +165,11 @@ impl GameState {
         }
     }
 
-    #[allow(dead_code)]
-    pub fn auto_hit(&mut self) {
-        if !self.deck.is_empty() && self.deck_drawn.is_empty() {
-            self.deck_hit();
-        }
-    }
-
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn victory() -> Self {
+        use crate::cards::{Rank, Suit};
+        use strum::IntoEnumIterator;
+
         let mut card_piles: [CardPile; Self::CARD_PILES_COUNT] = Default::default();
 
         for (index, suit) in Suit::iter().enumerate() {
@@ -206,7 +188,7 @@ impl GameState {
         }
     }
 
-    #[allow(dead_code)]
+    #[cfg(test)]
     pub fn almost_victory() -> Self {
         let mut x = Self::victory();
         x.columns[0]
