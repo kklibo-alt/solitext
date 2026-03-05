@@ -12,7 +12,6 @@ web = ["dep:ratzilla"]
 rand = "0.10.0"
 strum = { version = "0.28.0", features = ["derive"] }
 ratatui = { version = "0.30.0", default-features = false }
-test-case = "3.3.1"
 ratzilla = { version = "0.3.0", optional = true }
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

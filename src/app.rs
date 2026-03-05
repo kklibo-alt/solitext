@@ -134,7 +134,7 @@ impl App {
         game_logic::face_up_on_columns(&mut self.game_state);
         self.cursor
             .apply_column_selection_rules(&self.game_state, self.debug_mode);
-        if let Some(mut selected) = self.selected {
+        if let Some(ref mut selected) = self.selected {
             selected.apply_column_selection_rules(&self.game_state, self.debug_mode);
         }
         self.set_context_help_message();
