@@ -132,7 +132,20 @@ impl Selection {
         }
     }
 
-    /// Get the selected card collection
+    pub fn view_collection<'a>(&self, game_state: &'a GameState) -> &'a dyn CardCollection {
+        match self {
+            Self::Deck => &game_state.deck_drawn,
+            Self::Column { index, .. } => game_state
+                .columns
+                .get(*index)
+                .expect("selected card column should exist"),
+            Self::Pile { index } => game_state
+                .card_piles
+                .get(*index)
+                .expect("selected card pile should exist"),
+        }
+    }
+
     pub fn selected_collection<'a>(
         &'a self,
         game_state: &'a mut GameState,

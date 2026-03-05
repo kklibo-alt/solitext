@@ -1,6 +1,28 @@
 use crate::cards::{Card, Rank};
 use crate::game_state::{CardState, GameState};
 use crate::selection::Selection;
+use std::fmt;
+
+#[derive(Debug)]
+pub enum MoveError {
+    EmptySource,
+    WrongSuit,
+    WrongRank,
+    InvalidCardCount,
+    InvalidTarget,
+}
+
+impl fmt::Display for MoveError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::EmptySource => write!(f, "source is empty"),
+            Self::WrongSuit => write!(f, "wrong suit"),
+            Self::WrongRank => write!(f, "wrong rank"),
+            Self::InvalidCardCount => write!(f, "invalid card count"),
+            Self::InvalidTarget => write!(f, "invalid target"),
+        }
+    }
+}
 
 pub fn victory(game_state: &GameState) -> bool {
     for pile in &game_state.card_piles {
@@ -15,62 +37,70 @@ pub fn victory(game_state: &GameState) -> bool {
     true
 }
 
-fn valid_move_deck_to_pile(pile_index: usize, game_state: &mut GameState) -> Result<(), ()> {
+fn valid_move_deck_to_pile(pile_index: usize, game_state: &GameState) -> Result<(), MoveError> {
     use Selection::{Deck, Pile};
-    let deck_card = Deck.selected_collection(game_state).peek().ok_or(())?;
+    let deck_card = Deck
+        .view_collection(game_state)
+        .peek()
+        .ok_or(MoveError::EmptySource)?;
     let pile_card = Pile { index: pile_index }
-        .selected_collection(game_state)
+        .view_collection(game_state)
         .peek();
 
     if deck_card.suit as usize != pile_index {
-        //wrong pile
-        return Err(());
+        return Err(MoveError::WrongSuit);
     }
 
     if let Some(pile_card) = pile_card {
         if deck_card.rank as usize == pile_card.rank as usize + 1 {
             Ok(())
         } else {
-            Err(())
+            Err(MoveError::WrongRank)
         }
     } else if deck_card.rank == Rank::Ace {
         Ok(())
     } else {
-        Err(())
+        Err(MoveError::WrongRank)
     }
 }
 
 fn valid_move_card_to_column(
     card: Card,
     column_index: usize,
-    game_state: &mut GameState,
-) -> Result<(), ()> {
+    game_state: &GameState,
+) -> Result<(), MoveError> {
     use Selection::Column;
     let column_card = Column {
         index: column_index,
         card_count: 0,
     }
-    .selected_collection(game_state)
+    .view_collection(game_state)
     .peek();
 
     if let Some(column_card) = column_card {
-        if card.rank as usize + 1 == column_card.rank as usize
-            && card.suit.is_red() != column_card.suit.is_red()
-        {
-            Ok(())
+        if card.rank as usize + 1 != column_card.rank as usize {
+            Err(MoveError::WrongRank)
+        } else if card.suit.is_red() == column_card.suit.is_red() {
+            Err(MoveError::WrongSuit)
         } else {
-            Err(())
+            Ok(())
         }
     } else if card.rank == Rank::King {
         Ok(())
     } else {
-        Err(())
+        Err(MoveError::WrongRank)
     }
 }
 
-fn valid_move_deck_to_column(column_index: usize, game_state: &mut GameState) -> Result<(), ()> {
+fn valid_move_deck_to_column(
+    column_index: usize,
+    game_state: &GameState,
+) -> Result<(), MoveError> {
     use Selection::Deck;
-    let deck_card = Deck.selected_collection(game_state).peek().ok_or(())?;
+    let deck_card = Deck
+        .view_collection(game_state)
+        .peek()
+        .ok_or(MoveError::EmptySource)?;
     valid_move_card_to_column(deck_card, column_index, game_state)
 }
 
@@ -78,17 +108,17 @@ fn valid_move_column_to_column(
     from_index: usize,
     card_count: usize,
     to_index: usize,
-    game_state: &mut GameState,
-) -> Result<(), ()> {
+    game_state: &GameState,
+) -> Result<(), MoveError> {
     let cards = Selection::Column {
         index: from_index,
         card_count,
     }
-    .selected_collection(game_state)
+    .view_collection(game_state)
     .peek_n(card_count)
-    .ok_or(())?;
+    .ok_or(MoveError::EmptySource)?;
 
-    let first_card = cards.first().copied().ok_or(())?;
+    let first_card = cards.first().copied().ok_or(MoveError::EmptySource)?;
     valid_move_card_to_column(first_card, to_index, game_state)
 }
 
@@ -96,27 +126,27 @@ fn valid_move_column_to_pile(
     column_index: usize,
     card_count: usize,
     pile_index: usize,
-    game_state: &mut GameState,
-) -> Result<(), ()> {
+    game_state: &GameState,
+) -> Result<(), MoveError> {
     use Selection::{Column, Pile};
 
     if card_count != 1 {
-        return Err(());
+        return Err(MoveError::InvalidCardCount);
     }
 
     let column_card = Column {
         index: column_index,
         card_count,
     }
-    .selected_collection(game_state)
+    .view_collection(game_state)
     .peek()
-    .ok_or(())?;
+    .ok_or(MoveError::EmptySource)?;
     if column_card.suit as usize != pile_index {
-        return Err(());
+        return Err(MoveError::WrongSuit);
     }
 
     let pile_card = Pile { index: pile_index }
-        .selected_collection(game_state)
+        .view_collection(game_state)
         .peek();
 
     if let Some(pile_card) = pile_card {
@@ -127,40 +157,44 @@ fn valid_move_column_to_pile(
         return Ok(());
     }
 
-    Err(())
+    Err(MoveError::WrongRank)
 }
 
 fn valid_move_pile_to_column(
     pile_index: usize,
     column_index: usize,
-    game_state: &mut GameState,
-) -> Result<(), ()> {
+    game_state: &GameState,
+) -> Result<(), MoveError> {
     let card = Selection::Pile { index: pile_index }
-        .selected_collection(game_state)
+        .view_collection(game_state)
         .peek()
-        .ok_or(())?;
+        .ok_or(MoveError::EmptySource)?;
 
     valid_move_card_to_column(card, column_index, game_state)
 }
 
-pub fn valid_move(from: Selection, to: Selection, game_state: &mut GameState) -> Result<(), ()> {
+pub fn valid_move(
+    from: Selection,
+    to: Selection,
+    game_state: &GameState,
+) -> Result<(), MoveError> {
     use Selection::{Column, Deck, Pile};
     match from {
         Deck => match to {
-            Deck => Err(()),
+            Deck => Err(MoveError::InvalidTarget),
             Pile { index } => valid_move_deck_to_pile(index, game_state),
             Column { index, .. } => valid_move_deck_to_column(index, game_state),
         },
         Pile { index } => match to {
-            Deck => Err(()),
-            Pile { .. } => Err(()),
+            Deck => Err(MoveError::InvalidTarget),
+            Pile { .. } => Err(MoveError::InvalidTarget),
             Column {
                 index: column_index,
                 ..
             } => valid_move_pile_to_column(index, column_index, game_state),
         },
         Column { index, card_count } => match to {
-            Deck => Err(()),
+            Deck => Err(MoveError::InvalidTarget),
             Pile { index: pile_index } => {
                 valid_move_column_to_pile(index, card_count, pile_index, game_state)
             }

@@ -1,7 +1,6 @@
-use crate::app::{App, Screen};
+use crate::app::{App, GameKey, Screen};
 use crate::draw::Draw;
 use crate::game_state::GameMode;
-use crate::selection::Selection;
 use ratatui::crossterm::event::{self, Event, KeyCode, KeyEventKind, KeyModifiers};
 
 pub struct Ui {
@@ -27,6 +26,25 @@ impl Ui {
         }
     }
 
+    fn convert_key(code: KeyCode) -> Option<GameKey> {
+        Some(match code {
+            KeyCode::Left => GameKey::Left,
+            KeyCode::Right => GameKey::Right,
+            KeyCode::Up => GameKey::Up,
+            KeyCode::Down => GameKey::Down,
+            KeyCode::Home => GameKey::Home,
+            KeyCode::End => GameKey::End,
+            KeyCode::Enter => GameKey::Enter,
+            KeyCode::Esc => GameKey::Esc,
+            KeyCode::Char(c) => GameKey::Char(c),
+            _ => return None,
+        })
+    }
+
+    fn is_ctrl_c(key: &event::KeyEvent) -> bool {
+        key.code == KeyCode::Char('c') && key.modifiers.contains(KeyModifiers::CONTROL)
+    }
+
     fn run_game(&mut self) {
         self.app.update();
         if self.app.screen != Screen::Game {
@@ -36,38 +54,15 @@ impl Ui {
 
         loop {
             let key = Self::read_key_event();
-            match key.code {
-                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    self.app.screen = Screen::Quit;
-                    break;
-                }
-                KeyCode::Left => self.app.cursor.move_left(),
-                KeyCode::Right => self.app.cursor.move_right(),
-                KeyCode::Up => self.app.cursor.select_up(),
-                KeyCode::Down => self.app.cursor.select_down(),
-                KeyCode::Home => self.app.cursor = Selection::Deck,
-                KeyCode::End => self.app.cursor = Selection::Pile { index: 0 },
-                KeyCode::Char(' ') => self.app.cards_action(),
-                KeyCode::Enter => self.app.enter_key_action(),
-                KeyCode::Char('c') if self.app.debug_mode => {
-                    self.app.debug_unchecked_cards_action()
-                }
-                KeyCode::Char('x') => self.app.selected = None,
-                KeyCode::Char('z') if self.app.debug_mode => self.app.debug_check_valid(),
-                KeyCode::Char('d') => self.app.debug_mode = !self.app.debug_mode,
-                KeyCode::Char('h') => {
-                    self.app.screen = Screen::Help;
-                    break;
-                }
-                KeyCode::Esc => {
-                    self.app.screen = Screen::GameMenu;
-                    break;
-                }
-                _ => {}
+            if Self::is_ctrl_c(&key) {
+                self.app.screen = Screen::Quit;
+                break;
             }
-            self.app.update();
+            if let Some(game_key) = Self::convert_key(key.code) {
+                self.app.handle_game_key(game_key);
+            }
             if self.app.screen != Screen::Game {
-                return;
+                break;
             }
             self.draw.display_game_state(&self.app);
         }
@@ -77,6 +72,10 @@ impl Ui {
         self.draw.display_start_screen();
         loop {
             let key = Self::read_key_event();
+            if Self::is_ctrl_c(&key) || key.code == KeyCode::Esc {
+                self.app.screen = Screen::Quit;
+                break;
+            }
             match key.code {
                 KeyCode::Char('1') => {
                     self.app.new_game(GameMode::DrawOne);
@@ -84,13 +83,6 @@ impl Ui {
                 }
                 KeyCode::Char('3') => {
                     self.app.new_game(GameMode::DrawThree);
-                    break;
-                }
-                KeyCode::Esc | KeyCode::Char('c')
-                    if key.code == KeyCode::Esc
-                        || key.modifiers.contains(KeyModifiers::CONTROL) =>
-                {
-                    self.app.screen = Screen::Quit;
                     break;
                 }
                 _ => {}
@@ -102,6 +94,10 @@ impl Ui {
         self.draw.display_game_menu(&self.app);
         loop {
             let key = Self::read_key_event();
+            if Self::is_ctrl_c(&key) {
+                self.app.screen = Screen::Quit;
+                break;
+            }
             match key.code {
                 KeyCode::Char('1') => {
                     self.app.new_game(GameMode::DrawOne);
@@ -119,10 +115,6 @@ impl Ui {
                     self.app.screen = Screen::Quit;
                     break;
                 }
-                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
-                    self.app.screen = Screen::Quit;
-                    break;
-                }
                 KeyCode::Esc => {
                     self.app.screen = Screen::Game;
                     break;
@@ -136,16 +128,16 @@ impl Ui {
         self.draw.display_victory(&self.app);
         loop {
             let key = Self::read_key_event();
+            if Self::is_ctrl_c(&key) {
+                self.app.screen = Screen::Quit;
+                break;
+            }
             match key.code {
                 KeyCode::Char('y') => {
                     self.app.new_game(self.app.game_state.game_mode);
                     break;
                 }
                 KeyCode::Char('n') | KeyCode::Esc => {
-                    self.app.screen = Screen::Quit;
-                    break;
-                }
-                KeyCode::Char('c') if key.modifiers.contains(KeyModifiers::CONTROL) => {
                     self.app.screen = Screen::Quit;
                     break;
                 }

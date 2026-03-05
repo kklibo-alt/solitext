@@ -13,6 +13,18 @@ pub enum Screen {
     Quit,
 }
 
+pub enum GameKey {
+    Left,
+    Right,
+    Up,
+    Down,
+    Home,
+    End,
+    Enter,
+    Esc,
+    Char(char),
+}
+
 pub struct App {
     pub game_deck: Option<Vec<Card>>,
     pub screen: Screen,
@@ -59,7 +71,7 @@ impl App {
     pub fn cards_action(&mut self) {
         if let (Some(from), to) = (self.selected, self.cursor) {
             self.selected = None;
-            if game_logic::valid_move(from, to, &mut self.game_state).is_ok() {
+            if game_logic::valid_move(from, to, &self.game_state).is_ok() {
                 match Self::move_cards(from, to, &mut self.game_state) {
                     Ok(_) => self.debug_message = "move OK".to_string(),
                     Err(_) => self.debug_message = "move attempt failed".to_string(),
@@ -110,8 +122,10 @@ impl App {
 
     pub fn debug_check_valid(&mut self) {
         if let (Some(from), to) = (self.selected, self.cursor) {
-            self.debug_message =
-                format!("{:?}", game_logic::valid_move(from, to, &mut self.game_state));
+            self.debug_message = match game_logic::valid_move(from, to, &self.game_state) {
+                Ok(()) => "valid".to_string(),
+                Err(e) => format!("invalid: {e}"),
+            };
         } else {
             self.debug_message = String::new();
         }
@@ -129,7 +143,6 @@ impl App {
     }
 
     /// Run game-state housekeeping after each action.
-    /// Returns true if the screen changed (e.g. victory detected).
     pub fn update(&mut self) {
         game_logic::face_up_on_columns(&mut self.game_state);
         self.cursor
@@ -143,6 +156,28 @@ impl App {
             self.debug_message = "Victory".to_string();
             self.screen = Screen::Victory;
         }
+    }
+
+    /// Handle a key press on the Game screen. Calls `update()` afterwards.
+    pub fn handle_game_key(&mut self, key: GameKey) {
+        match key {
+            GameKey::Left => self.cursor.move_left(),
+            GameKey::Right => self.cursor.move_right(),
+            GameKey::Up => self.cursor.select_up(),
+            GameKey::Down => self.cursor.select_down(),
+            GameKey::Home => self.cursor = Selection::Deck,
+            GameKey::End => self.cursor = Selection::Pile { index: 0 },
+            GameKey::Char(' ') => self.cards_action(),
+            GameKey::Enter => self.enter_key_action(),
+            GameKey::Char('c') if self.debug_mode => self.debug_unchecked_cards_action(),
+            GameKey::Char('x') => self.selected = None,
+            GameKey::Char('z') if self.debug_mode => self.debug_check_valid(),
+            GameKey::Char('d') => self.debug_mode = !self.debug_mode,
+            GameKey::Char('h') => self.screen = Screen::Help,
+            GameKey::Esc => self.screen = Screen::GameMenu,
+            _ => {}
+        }
+        self.update();
     }
 
     pub fn new_game(&mut self, mode: GameMode) {
