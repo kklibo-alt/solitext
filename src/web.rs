@@ -40,6 +40,9 @@ pub fn run() -> io::Result<()> {
             }
 
             let Some(key) = convert_key(event.code) else {
+                if app.screen == Screen::Game {
+                    app.update();
+                }
                 return;
             };
 

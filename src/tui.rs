@@ -60,6 +60,8 @@ impl Ui {
             }
             if let Some(game_key) = Self::convert_key(key.code) {
                 self.app.handle_game_key(game_key);
+            } else {
+                self.app.update();
             }
             if self.app.screen != Screen::Game {
                 break;
